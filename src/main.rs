@@ -1,42 +1,57 @@
-use std::{ffi::CString, mem, ptr};
+mod shader;
+
+use owo_colors::OwoColorize;
+use std::{mem, process::exit, ptr};
 
 use gl::types::*;
 use glfw::{Action, Context, Key, WindowEvent};
+use shader::{Shader, ShaderKind};
 
-unsafe fn compile_shader(shader_type: GLenum, source: &str) -> GLuint {
-    // Create the vertex shader
-    let shader = gl::CreateShader(shader_type);
-    let shader_source = CString::new(source.as_bytes()).unwrap();
+fn load_shaders() -> GLuint {
+    let shader_program: GLuint;
 
-    // Compile the vertex shader
-    gl::ShaderSource(shader, 1, &shader_source.as_ptr(), ptr::null());
-    gl::CompileShader(shader);
+    unsafe {
+        shader_program = gl::CreateProgram();
 
-    // Check for errors
-    let mut success: GLint = 1;
-    let mut info_log: [GLchar; 512] = [0; 512];
+        let mut vertex_shader = Shader::new("./shaders/vertex.glsl", ShaderKind::Vertex);
+        let mut fragment_shader = Shader::new("./shaders/frag.glsl", ShaderKind::Fragment);
 
-    gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut success);
+        vertex_shader.compile();
+        fragment_shader.compile();
 
-    if success != 1 {
-        gl::GetShaderInfoLog(shader, 512, ptr::null_mut(), info_log.as_mut_ptr());
+        vertex_shader.attach(shader_program);
+        fragment_shader.attach(shader_program);
 
-        let info_log: &[u8] =
-            std::slice::from_raw_parts(info_log.as_ptr() as *const u8, info_log.len());
+        gl::LinkProgram(shader_program);
 
-        panic!(
-            "Error while compiling shader: {}",
-            std::str::from_utf8(&info_log).unwrap()
-        );
+        // Check for errors
+        let mut success = 1;
+        let mut info_log: [GLchar; 512] = [0; 512];
+
+        gl::GetProgramiv(shader_program, gl::LINK_STATUS, &mut success);
+
+        if success != 1 {
+            gl::GetProgramInfoLog(shader_program, 512, ptr::null_mut(), info_log.as_mut_ptr());
+
+            let info_log: &[u8] =
+                std::slice::from_raw_parts(info_log.as_ptr() as *const u8, info_log.len());
+
+            println!("{} while linking shader program:", "Error".red().bold());
+            println!("{}", std::str::from_utf8(&info_log).unwrap());
+
+            exit(1)
+        }
     }
 
-    shader
+    println!("Successfully loaded shaders...");
+
+    shader_program
 }
 
 fn main() {
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
-    glfw.window_hint(glfw::WindowHint::ContextVersion(3, 2)); // Use a version that macOS supports
+    glfw.window_hint(glfw::WindowHint::ContextVersion(4, 1));
     glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
     glfw.window_hint(glfw::WindowHint::OpenGlProfile(
         glfw::OpenGlProfileHint::Core,
@@ -56,7 +71,20 @@ fn main() {
     // Load the OpenGL function pointers
     gl::load_with(|s| window.get_proc_address(s));
 
-    let verticies: [GLfloat; 9] = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
+    // Load the shaders
+    let shader_program = load_shaders();
+
+    let verticies: [GLfloat; 12] = [
+        0.5, 0.5, 0.0, // Top right
+        0.5, -0.5, 0.0, // Bottom right
+        -0.5, -0.5, 0.0, // Bottom left
+        -0.5, 0.5, 0.0, // Top left
+    ];
+    let indicies = [
+        0, 1, 3, // First triangle
+        1, 2, 3, // Second triangle
+    ];
+
     let mut vbo: GLuint = 0;
     let mut vao: GLuint = 0;
 
@@ -104,43 +132,6 @@ fn main() {
         gl::EnableVertexAttribArray(0);
     }
 
-    // Compile the shaders
-    let shader_program: GLuint;
-    let vertex_shader: GLuint;
-    let fragment_shader: GLuint;
-
-    unsafe {
-        vertex_shader = compile_shader(gl::VERTEX_SHADER, include_str!("../shaders/vertex.glsl"));
-        fragment_shader = compile_shader(gl::FRAGMENT_SHADER, include_str!("../shaders/frag.glsl"));
-
-        // Create the shader program
-        shader_program = gl::CreateProgram();
-
-        // Attach the shaders to the program
-        gl::AttachShader(shader_program, vertex_shader);
-        gl::AttachShader(shader_program, fragment_shader);
-        gl::LinkProgram(shader_program);
-
-        // Check for errors
-        let mut success: GLint = 1;
-
-        gl::GetProgramiv(shader_program, gl::LINK_STATUS, &mut success);
-
-        if success != 1 {
-            let mut info_log: [GLchar; 512] = [0; 512];
-
-            gl::GetProgramInfoLog(shader_program, 512, ptr::null_mut(), info_log.as_mut_ptr());
-
-            let info_log: &[u8] =
-                std::slice::from_raw_parts(info_log.as_ptr() as *const u8, info_log.len());
-
-            panic!(
-                "Error while linking shader program: {}",
-                std::str::from_utf8(&info_log).unwrap()
-            );
-        }
-    }
-
     println!("VBO: {}", vbo);
     println!("VAO: {}", vao);
 
@@ -184,10 +175,6 @@ fn main() {
     unsafe {
         // Delete the shader program
         gl::DeleteProgram(shader_program);
-
-        // Delete the shaders
-        gl::DeleteShader(vertex_shader);
-        gl::DeleteShader(fragment_shader);
 
         // Delete the buffer
         gl::DeleteBuffers(1, &vbo);
