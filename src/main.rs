@@ -1,7 +1,11 @@
 mod shader;
 
 use owo_colors::OwoColorize;
-use std::{mem, process::exit, ptr};
+use std::{
+    mem::{self, size_of},
+    process::exit,
+    ptr,
+};
 
 use gl::types::*;
 use glfw::{Action, Context, Key, WindowEvent};
@@ -85,37 +89,27 @@ fn main() {
         1, 2, 3, // Second triangle
     ];
 
+    let mut ibo: GLuint = 0;
     let mut vbo: GLuint = 0;
     let mut vao: GLuint = 0;
 
+    // Generate buffers
     unsafe {
         // Generates one buffer and stores its id in vbo
         gl::GenBuffers(1, &mut vbo);
-
-        // Binds the buffer to the GL_ARRAY_BUFFER target
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-
-        // Bind the verticies to the buffer
-        gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (std::mem::size_of::<GLfloat>()) as GLsizeiptr,
-            verticies.as_ptr() as *const GLvoid,
-            gl::STATIC_DRAW,
-        );
-
-        // Generate a vertex array object
+        gl::GenBuffers(1, &mut ibo);
         gl::GenVertexArrays(1, &mut vao);
     }
 
-    // Copy the verticies into a buffer
+    // Bind and fill the buffers
     unsafe {
-        // Bind the VAO and VBO
+        // Bind the VAO
         gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
         gl::BindVertexArray(vao);
 
         gl::BufferData(
             gl::ARRAY_BUFFER,
-            (verticies.len() * 4) as isize,
+            (verticies.len() * size_of::<GLfloat>()) as GLsizeiptr,
             verticies.as_ptr() as *const GLvoid,
             gl::STATIC_DRAW,
         );
@@ -130,10 +124,26 @@ fn main() {
             ptr::null(),
         );
         gl::EnableVertexAttribArray(0);
+
+        // Bind the IBO
+        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ibo);
+
+        gl::BufferData(
+            gl::ELEMENT_ARRAY_BUFFER,
+            (indicies.len() * size_of::<GLfloat>()) as GLsizeiptr,
+            indicies.as_ptr() as *const GLvoid,
+            gl::STATIC_DRAW,
+        );
     }
 
     println!("VBO: {}", vbo);
     println!("VAO: {}", vao);
+    println!("EBO: {}", ibo);
+
+    // Use wireframe mode
+    unsafe {
+        gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+    }
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -151,7 +161,8 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT);
 
             gl::BindVertexArray(vao);
-            gl::DrawArrays(gl::TRIANGLES, 0, 3);
+            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
+            gl::BindVertexArray(0);
 
             // check for errors
             let mut error: GLenum = gl::GetError();
