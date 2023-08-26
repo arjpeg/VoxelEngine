@@ -1,53 +1,17 @@
 mod shader;
+mod shader_program;
 
-use owo_colors::OwoColorize;
+use shader_program::ShaderProgram;
 use std::{
     mem::{self, size_of},
-    process::exit,
     ptr,
 };
 
 use gl::types::*;
 use glfw::{Action, Context, Key, WindowEvent};
-use shader::{Shader, ShaderKind};
 
-fn load_shaders() -> GLuint {
-    let shader_program: GLuint;
-
-    unsafe {
-        shader_program = gl::CreateProgram();
-
-        let mut vertex_shader = Shader::new("./shaders/vertex.glsl", ShaderKind::Vertex);
-        let mut fragment_shader = Shader::new("./shaders/frag.glsl", ShaderKind::Fragment);
-
-        vertex_shader.compile();
-        fragment_shader.compile();
-
-        vertex_shader.attach(shader_program);
-        fragment_shader.attach(shader_program);
-
-        gl::LinkProgram(shader_program);
-
-        // Check for errors
-        let mut success = 1;
-        let mut info_log: [GLchar; 512] = [0; 512];
-
-        gl::GetProgramiv(shader_program, gl::LINK_STATUS, &mut success);
-
-        if success != 1 {
-            gl::GetProgramInfoLog(shader_program, 512, ptr::null_mut(), info_log.as_mut_ptr());
-
-            let info_log: &[u8] =
-                std::slice::from_raw_parts(info_log.as_ptr() as *const u8, info_log.len());
-
-            println!("{} while linking shader program:", "Error".red().bold());
-            println!("{}", std::str::from_utf8(&info_log).unwrap());
-
-            exit(1)
-        }
-    }
-
-    println!("Successfully loaded shaders...");
+fn load_shaders() -> ShaderProgram {
+    let shader_program = ShaderProgram::new("./shaders/vertex.glsl", "./shaders/frag.glsl");
 
     shader_program
 }
@@ -78,16 +42,12 @@ fn main() {
     // Load the shaders
     let shader_program = load_shaders();
 
-    let verticies: [GLfloat; 12] = [
-        0.5, 0.5, 0.0, // Top right
-        0.5, -0.5, 0.0, // Bottom right
-        -0.5, -0.5, 0.0, // Bottom left
-        -0.5, 0.5, 0.0, // Top left
+    let verticies: [GLfloat; 18] = [
+        0.5, -0.5, 0.0, 1.0, 0.0, 0.0, // bottom right
+        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, // bottom left
+        0.0, 0.5, 0.0, 0.0, 0.0, 1.0, // top
     ];
-    let indicies = [
-        0, 1, 3, // First triangle
-        1, 2, 3, // Second triangle
-    ];
+    let indicies: [u32; 6] = [0, 1, 2, 2, 1, 0];
 
     let mut ibo: GLuint = 0;
     let mut vbo: GLuint = 0;
@@ -109,7 +69,7 @@ fn main() {
 
         gl::BufferData(
             gl::ARRAY_BUFFER,
-            (verticies.len() * size_of::<GLfloat>()) as GLsizeiptr,
+            (verticies.len() * size_of::<GLfloat>() * 2) as GLsizeiptr,
             verticies.as_ptr() as *const GLvoid,
             gl::STATIC_DRAW,
         );
@@ -120,17 +80,27 @@ fn main() {
             3,
             gl::FLOAT,
             gl::FALSE,
-            3 * mem::size_of::<GLfloat>() as GLsizei,
+            6 * mem::size_of::<GLfloat>() as GLsizei,
             ptr::null(),
         );
         gl::EnableVertexAttribArray(0);
+
+        gl::VertexAttribPointer(
+            1,
+            3,
+            gl::FLOAT,
+            gl::FALSE,
+            6 * mem::size_of::<GLfloat>() as GLsizei,
+            (3 * mem::size_of::<GLfloat>()) as *const GLvoid,
+        );
+        gl::EnableVertexAttribArray(1);
 
         // Bind the IBO
         gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ibo);
 
         gl::BufferData(
             gl::ELEMENT_ARRAY_BUFFER,
-            (indicies.len() * size_of::<GLfloat>()) as GLsizeiptr,
+            (indicies.len() * size_of::<GLuint>()) as GLsizeiptr,
             indicies.as_ptr() as *const GLvoid,
             gl::STATIC_DRAW,
         );
@@ -141,9 +111,9 @@ fn main() {
     println!("EBO: {}", ibo);
 
     // Use wireframe mode
-    unsafe {
-        gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-    }
+    // unsafe {
+    //     gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+    // }
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -155,14 +125,20 @@ fn main() {
 
         // Draw the triangle
         unsafe {
-            gl::UseProgram(shader_program);
+            shader_program.use_program();
 
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
 
+            // Set uniforms
+            let time_value = glfw.get_time() as f32;
+
+            let x_shift = (time_value / 2.0).sin();
+
+            shader_program.set_float("u_x_offset", x_shift);
+
             gl::BindVertexArray(vao);
             gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
-            gl::BindVertexArray(0);
 
             // check for errors
             let mut error: GLenum = gl::GetError();
@@ -181,13 +157,5 @@ fn main() {
                 _ => {}
             }
         }
-    }
-
-    unsafe {
-        // Delete the shader program
-        gl::DeleteProgram(shader_program);
-
-        // Delete the buffer
-        gl::DeleteBuffers(1, &vbo);
     }
 }
