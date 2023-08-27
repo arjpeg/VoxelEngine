@@ -1,3 +1,4 @@
+mod image;
 mod shader;
 mod shader_program;
 
@@ -9,6 +10,8 @@ use std::{
 
 use gl::types::*;
 use glfw::{Action, Context, Key, WindowEvent};
+
+use crate::image::Image;
 
 fn load_shaders() -> ShaderProgram {
     let shader_program = ShaderProgram::new("./shaders/vertex.glsl", "./shaders/frag.glsl");
@@ -42,16 +45,26 @@ fn main() {
     // Load the shaders
     let shader_program = load_shaders();
 
-    let verticies: [GLfloat; 18] = [
-        0.5, -0.5, 0.0, 1.0, 0.0, 0.0, // bottom right
-        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, // bottom left
-        0.0, 0.5, 0.0, 0.0, 0.0, 1.0, // top
+    #[rustfmt::skip]
+    let verticies: [GLfloat; 32] = [
+        // positions      // colors        // texture coords
+        0.5,  0.5, 0.0,   1.0, 0.0, 0.0,   1.0, 1.0,   // 0 top right
+        0.5, -0.5, 0.0,   0.0, 1.0, 0.0,   1.0, 0.0,   // 1 bottom right
+       -0.5, -0.5, 0.0,   0.0, 0.0, 1.0,   0.0, 0.0,   // 2 bottom left
+       -0.5,  0.5, 0.0,   1.0, 1.0, 0.0,   0.0, 1.0    // 3 top left 
     ];
-    let indicies: [u32; 6] = [0, 1, 2, 2, 1, 0];
+
+    let indicies = [
+        1, 0, 2, // first triangle
+        0, 3, 2, // second triangle
+    ];
 
     let mut ibo: GLuint = 0;
     let mut vbo: GLuint = 0;
     let mut vao: GLuint = 0;
+
+    let image = Image::new("./res/image/wall.jpg");
+    image.bind();
 
     // Generate buffers
     unsafe {
@@ -69,19 +82,21 @@ fn main() {
 
         gl::BufferData(
             gl::ARRAY_BUFFER,
-            (verticies.len() * size_of::<GLfloat>() * 2) as GLsizeiptr,
+            (verticies.len() * size_of::<GLfloat>()) as GLsizeiptr,
             verticies.as_ptr() as *const GLvoid,
             gl::STATIC_DRAW,
         );
 
         // Link vertex attributes
+
+        // Position
         gl::VertexAttribPointer(
             0,
             3,
             gl::FLOAT,
             gl::FALSE,
-            6 * mem::size_of::<GLfloat>() as GLsizei,
-            ptr::null(),
+            (8 * size_of::<GLfloat>()) as GLsizei,
+            0 as *const GLvoid,
         );
         gl::EnableVertexAttribArray(0);
 
@@ -90,10 +105,20 @@ fn main() {
             3,
             gl::FLOAT,
             gl::FALSE,
-            6 * mem::size_of::<GLfloat>() as GLsizei,
+            8 * mem::size_of::<GLfloat>() as GLsizei,
             (3 * mem::size_of::<GLfloat>()) as *const GLvoid,
         );
         gl::EnableVertexAttribArray(1);
+
+        gl::VertexAttribPointer(
+            2,
+            2,
+            gl::FLOAT,
+            gl::FALSE,
+            8 * mem::size_of::<GLfloat>() as GLsizei,
+            (6 * mem::size_of::<GLfloat>()) as *const GLvoid,
+        );
+        gl::EnableVertexAttribArray(2);
 
         // Bind the IBO
         gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ibo);
@@ -110,10 +135,10 @@ fn main() {
     println!("VAO: {}", vao);
     println!("EBO: {}", ibo);
 
-    // Use wireframe mode
-    // unsafe {
-    //     gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-    // }
+    unsafe {
+        // Turn on wireframe mode
+        // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+    }
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -133,11 +158,14 @@ fn main() {
             // Set uniforms
             let time_value = glfw.get_time() as f32;
 
-            let x_shift = (time_value / 2.0).sin();
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, image.id);
 
-            shader_program.set_float("u_x_offset", x_shift);
+            shader_program.set_float("u_time", time_value);
 
             gl::BindVertexArray(vao);
+            gl::BindTexture(gl::TEXTURE_2D, image.id);
+
             gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
 
             // check for errors

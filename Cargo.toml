@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 gl = "0.14.0"
 glfw = "0.52.0"
+image = "0.24.7"
 owo-colors = "3.5.0"

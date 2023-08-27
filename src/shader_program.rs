@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::{ffi::CString, process::exit};
 
 use gl::types::GLchar;
 use owo_colors::OwoColorize;
@@ -64,7 +64,11 @@ impl ShaderProgram {
                 println!("{} while linking shader program:", "Error".red().bold());
                 println!("{}", std::str::from_utf8(&info_log).unwrap());
             }
+
+            exit(1);
         }
+
+        println!("{}", "Shader program linked successfully!".green().bold(),);
 
         self.id = shader_program;
     }
