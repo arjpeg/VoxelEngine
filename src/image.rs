@@ -21,10 +21,13 @@ pub struct Image {
 #[allow(dead_code)]
 impl Image {
     pub fn new(filename: &'static str) -> Self {
-        let img = ImageReader::open(filename)
+        let mut img = ImageReader::open(filename)
             .expect(format!("Failed to open image file '{}'", filename).as_str())
             .decode()
             .unwrap();
+
+        // Flip the image vertically
+        img = img.flipv();
 
         // Get the image dimensions
         let (width, height) = img.dimensions();
@@ -37,8 +40,6 @@ impl Image {
 
         // Get the image pixels
         let pixels = image_content.as_slice().to_vec();
-
-        assert!(image_content == pixels);
 
         // Create the OpenGL texture
         let mut id: GLuint = 0;

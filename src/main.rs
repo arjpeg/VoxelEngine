@@ -88,7 +88,9 @@ fn main() {
     );
 
     let image = Image::new("./res/image/wall.jpg");
-    image.bind();
+    let image2 = Image::new("./res/image/awesomeface.png");
+
+    let mut mix = 0.2;
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -108,15 +110,21 @@ fn main() {
             // Set uniforms
             let time_value = glfw.get_time() as f32;
 
-            gl::ActiveTexture(gl::TEXTURE0);
-            gl::BindTexture(gl::TEXTURE_2D, image.id);
-
             shader_program.set_float("u_time", time_value);
+            shader_program.set_float("u_mix", mix);
+
+            gl::ActiveTexture(gl::TEXTURE0);
+            image.bind();
+
+            gl::ActiveTexture(gl::TEXTURE1);
+            image2.bind();
 
             // Draw the triangle
             vao.bind();
             indicies.bind();
-            gl::BindTexture(gl::TEXTURE_2D, image.id);
+
+            shader_program.set_int("u_texture", 0);
+            shader_program.set_int("u_texture2", 1);
 
             gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
 
@@ -134,6 +142,14 @@ fn main() {
 
             match event {
                 WindowEvent::Key(Key::Q, _, Action::Press, _) => window.set_should_close(true),
+                WindowEvent::Key(Key::Up, _, Action::Press, _) => {
+                    mix += 0.1;
+                    mix = mix.clamp(0.0, 1.0);
+                }
+                WindowEvent::Key(Key::Down, _, Action::Press, _) => {
+                    mix -= 0.1;
+                    mix = mix.clamp(0.0, 1.0);
+                }
                 _ => {}
             }
         }

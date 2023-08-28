@@ -6,8 +6,13 @@ in vec3 v_color;
 in vec2 v_texCoord;
 
 uniform sampler2D u_texture;
-uniform float u_time;
+uniform sampler2D u_texture2;
+
+uniform float u_mix;
 
 void main() {
-    fragColor = vec4(v_color, 1.0) * texture(u_texture, v_texCoord);
+    vec4 texColor = texture(u_texture, v_texCoord);
+    vec4 texColor2 = texture(u_texture2, v_texCoord);
+
+    fragColor = mix(texColor, texColor2, u_mix) * vec4(v_color, 1.0);
 }
