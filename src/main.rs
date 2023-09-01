@@ -7,8 +7,10 @@ mod shader_program;
 use shader_program::ShaderProgram;
 use std::{mem::size_of, ptr};
 
+use nalgebra_glm as glm;
+
 use gl::types::*;
-use glfw::{Action, Context, Key, WindowEvent};
+use glfw::{ffi::glfwGetCursorPos, Action, Context, Key, MouseButton, WindowEvent};
 
 use crate::{
     buffer::{ibo::IBO, vao::VAO, vbo::VBO, vertex::Vertex},
@@ -90,7 +92,7 @@ fn main() {
     let image = Image::new("./res/image/wall.jpg");
     let image2 = Image::new("./res/image/awesomeface.png");
 
-    let mut mix = 0.2;
+    let mut scale_factor: f32 = 1.0;
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -110,8 +112,27 @@ fn main() {
             // Set uniforms
             let time_value = glfw.get_time() as f32;
 
-            shader_program.set_float("u_time", time_value);
-            shader_program.set_float("u_mix", mix);
+            let degrees = 50.0f32 * time_value;
+            let radians = degrees.to_radians();
+
+            let mut x: f64 = 0.0;
+            let mut y: f64 = 0.0;
+
+            glfwGetCursorPos(window.window_ptr(), &mut x, &mut y);
+
+            // normalize
+            let mouse_x = x / 600.0 * 2.0 - 1.0;
+            let mouse_y = y / 600.0 * -2.0 + 1.0;
+
+            let mouse_x = mouse_x as f32;
+            let mouse_y = mouse_y as f32;
+
+            let transform = glm::identity::<f32, 4>();
+            let transform = glm::translate(&transform, &glm::vec3(mouse_x, mouse_y, 0.0));
+            let transform = glm::rotate(&transform, radians, &glm::vec3(0.0, 0.0, 1.0));
+            let transform = glm::scale(&transform, &glm::vec3(scale_factor, scale_factor, 1.0));
+
+            shader_program.set_mat4("u_matrix", &transform);
 
             gl::ActiveTexture(gl::TEXTURE0);
             image.bind();
@@ -142,14 +163,15 @@ fn main() {
 
             match event {
                 WindowEvent::Key(Key::Q, _, Action::Press, _) => window.set_should_close(true),
-                WindowEvent::Key(Key::Up, _, Action::Press, _) => {
-                    mix += 0.1;
-                    mix = mix.clamp(0.0, 1.0);
+
+                WindowEvent::MouseButton(MouseButton::Button1, Action::Press, _) => {
+                    scale_factor += 0.1;
                 }
-                WindowEvent::Key(Key::Down, _, Action::Press, _) => {
-                    mix -= 0.1;
-                    mix = mix.clamp(0.0, 1.0);
+
+                WindowEvent::MouseButton(MouseButton::Button2, Action::Press, _) => {
+                    scale_factor -= 0.1;
                 }
+
                 _ => {}
             }
         }

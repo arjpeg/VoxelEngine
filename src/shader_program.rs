@@ -3,6 +3,8 @@ use std::{ffi::CString, process::exit};
 use gl::types::GLchar;
 use owo_colors::OwoColorize;
 
+use nalgebra_glm as glm;
+
 use crate::shader::{Shader, ShaderKind};
 
 pub struct ShaderProgram {
@@ -106,6 +108,15 @@ impl ShaderProgram {
             let name = CString::new(name).unwrap();
 
             gl::Uniform4f(gl::GetUniformLocation(self.id, name.as_ptr()), x, y, z, w);
+        }
+    }
+
+    pub fn set_mat4(&self, name: &str, mat: &glm::Mat4) {
+        unsafe {
+            let name = CString::new(name).unwrap();
+            let location = gl::GetUniformLocation(self.id, name.as_ptr());
+
+            gl::UniformMatrix4fv(location, 1, gl::FALSE, mat.as_ptr());
         }
     }
 }
