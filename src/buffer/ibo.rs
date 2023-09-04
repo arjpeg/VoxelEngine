@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::mem::size_of;
 
 use gl::types::{GLenum, GLsizeiptr, GLvoid};

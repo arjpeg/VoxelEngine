@@ -15,6 +15,13 @@ pub struct ShaderProgram {
 
 #[allow(dead_code)]
 impl ShaderProgram {
+    /// Creates a new shader program from the defeault vertex and fragment shaders.
+    /// (./res/shaders/vertex.glsl, ./res/shaders/frag.glsl)
+    pub fn load() -> Self {
+        Self::new("./res/shaders/vertex.glsl", "./res/shaders/frag.glsl")
+    }
+
+    /// Creates a new shader program from the given vertex and fragment shaders.
     pub fn new(
         vertex_shader_path: &'static str,
         fragment_shader_path: &'static str,
@@ -30,6 +37,7 @@ impl ShaderProgram {
         program
     }
 
+    /// Compiles the vertex and fragment shaders and links them to the shader program.
     fn compile_all(&mut self) {
         self.vertex_shader.compile();
         self.fragment_shader.compile();

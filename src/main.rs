@@ -5,7 +5,7 @@ mod shader;
 mod shader_program;
 
 use shader_program::ShaderProgram;
-use std::{mem::size_of, ptr};
+use std::mem::size_of;
 
 #[allow(unused_imports)]
 use nalgebra_glm as glm;
@@ -13,13 +13,7 @@ use nalgebra_glm as glm;
 use gl::types::*;
 use glfw::{Action, Context, Key, WindowEvent};
 
-use crate::buffer::{ibo::IBO, vao::VAO, vbo::VBO, vertex::Vertex};
-
-fn load_shaders() -> ShaderProgram {
-    let shader_program = ShaderProgram::new("./res/shaders/vertex.glsl", "./res/shaders/frag.glsl");
-
-    shader_program
-}
+use crate::buffer::{vao::VAO, vbo::VBO, vertex::Vertex};
 
 fn main() {
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
@@ -44,22 +38,52 @@ fn main() {
     // Load the OpenGL function pointers
     gl::load_with(|s| window.get_proc_address(s));
 
+    // Enable depth testing
+    unsafe {
+        gl::Enable(gl::DEPTH_TEST);
+    }
+
     // Load the shaders
-    let shader_program = load_shaders();
+    let shader_program = ShaderProgram::load();
 
     let verticies = VBO::new(
         &[
-            Vertex::new([0.5, 0.5, 0.0], [1.0, 0.0, 0.0]),
-            Vertex::new([0.5, -0.5, 0.0], [0.0, 1.0, 0.0]),
-            Vertex::new([-0.5, -0.5, 0.0], [0.0, 0.0, 1.0]),
-            Vertex::new([-0.5, 0.5, 0.0], [1.0, 1.0, 0.0]),
-        ],
-        gl::STATIC_DRAW,
-    );
-    let indicies = IBO::new(
-        &[
-            1, 0, 2, // first triangle
-            0, 3, 2, // second triangle
+            Vertex::new([-0.5, -0.5, -0.5], [0.0, 0.0, 1.0]),
+            Vertex::new([0.5, -0.5, -0.5], [1.0, 0.0, 0.0]),
+            Vertex::new([0.5, 0.5, -0.5], [1.0, 1.0, 0.0]),
+            Vertex::new([0.5, 0.5, -0.5], [1.0, 1.0, 0.0]),
+            Vertex::new([-0.5, 0.5, -0.5], [0.0, 1.0, 1.0]),
+            Vertex::new([-0.5, -0.5, -0.5], [0.0, 0.0, 1.0]),
+            Vertex::new([-0.5, -0.5, 0.5], [0.0, 0.0, 1.0]),
+            Vertex::new([0.5, -0.5, 0.5], [1.0, 0.0, 0.0]),
+            Vertex::new([0.5, 0.5, 0.5], [1.0, 1.0, 0.0]),
+            Vertex::new([0.5, 0.5, 0.5], [1.0, 1.0, 0.0]),
+            Vertex::new([-0.5, 0.5, 0.5], [0.0, 1.0, 1.0]),
+            Vertex::new([-0.5, -0.5, 0.5], [0.0, 0.0, 1.0]),
+            Vertex::new([-0.5, 0.5, 0.5], [1.0, 0.0, 0.0]),
+            Vertex::new([-0.5, 0.5, -0.5], [1.0, 1.0, 0.0]),
+            Vertex::new([-0.5, -0.5, -0.5], [0.0, 1.0, 1.0]),
+            Vertex::new([-0.5, -0.5, -0.5], [0.0, 1.0, 0.0]),
+            Vertex::new([-0.5, -0.5, 0.5], [0.0, 0.0, 1.0]),
+            Vertex::new([-0.5, 0.5, 0.5], [1.0, 0.0, 1.0]),
+            Vertex::new([0.5, 0.5, 0.5], [1.0, 0.0, 1.0]),
+            Vertex::new([0.5, 0.5, -0.5], [1.0, 1.0, 0.0]),
+            Vertex::new([0.5, -0.5, -0.5], [0.0, 1.0, 0.0]),
+            Vertex::new([0.5, -0.5, -0.5], [0.0, 1.0, 0.0]),
+            Vertex::new([0.5, -0.5, 0.5], [0.0, 0.0, 1.0]),
+            Vertex::new([0.5, 0.5, 0.5], [1.0, 0.0, 1.0]),
+            Vertex::new([-0.5, -0.5, -0.5], [0.0, 1.0, 1.0]),
+            Vertex::new([0.5, -0.5, -0.5], [1.0, 1.0, 1.0]),
+            Vertex::new([0.5, -0.5, 0.5], [1.0, 0.0, 1.0]),
+            Vertex::new([0.5, -0.5, 0.5], [1.0, 0.0, 1.0]),
+            Vertex::new([-0.5, -0.5, 0.5], [0.0, 0.0, 1.0]),
+            Vertex::new([-0.5, -0.5, -0.5], [0.0, 1.0, 0.0]),
+            Vertex::new([-0.5, 0.5, -0.5], [0.0, 1.0, 0.0]),
+            Vertex::new([0.5, 0.5, -0.5], [1.0, 1.0, 0.0]),
+            Vertex::new([0.5, 0.5, 0.5], [1.0, 0.0, 1.0]),
+            Vertex::new([0.5, 0.5, 0.5], [1.0, 0.0, 0.0]),
+            Vertex::new([-0.5, 0.5, 0.5], [0.0, 0.0, 1.0]),
+            Vertex::new([-0.5, 0.5, -0.5], [0.0, 1.0, 0.0]),
         ],
         gl::STATIC_DRAW,
     );
@@ -79,13 +103,13 @@ fn main() {
     );
 
     // Create transformations
-    let model_matrix = glm::rotate(
-        &glm::identity(),
-        -55.0f32.to_radians(),
+    let model_matrix = glm::rotate(&glm::identity(), 0.0, &glm::vec3(1.0, 0.0, 0.0));
+
+    let view_matrix = glm::rotate(
+        &glm::translate(&glm::identity(), &glm::vec3(0.0, 0.0, -3.0)),
+        15.0f32.to_radians(),
         &glm::vec3(1.0, 0.0, 0.0),
     );
-
-    let view_matrix = glm::translate(&glm::identity(), &glm::vec3(0.0, 0.0, -3.0));
 
     let aspect_ratio = 800 as f32 / 600 as f32;
     let fovy = 45.0f32.to_radians();
@@ -107,7 +131,7 @@ fn main() {
             shader_program.use_program();
 
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
             let time = glfw.get_time() as f32;
 
@@ -124,9 +148,8 @@ fn main() {
 
             // Draw the triangle
             vao.bind();
-            indicies.bind();
 
-            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
+            gl::DrawArrays(gl::TRIANGLES, 0, 36);
 
             // check for errors
             let mut error: GLenum = gl::GetError();
