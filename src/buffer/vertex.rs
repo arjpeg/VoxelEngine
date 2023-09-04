@@ -6,17 +6,11 @@ pub struct Vertex {
     pub position: [f32; 3],
     /// The color of the vertex.
     pub color: [f32; 3],
-    /// The texture coordinates of the vertex.
-    pub texture_coords: [f32; 2],
 }
 
 impl Vertex {
     /// Creates a new vertex.
-    pub fn new(position: [f32; 3], color: [f32; 3], texture_coords: [f32; 2]) -> Vertex {
-        Vertex {
-            position,
-            color,
-            texture_coords,
-        }
+    pub fn new(position: [f32; 3], color: [f32; 3]) -> Self {
+        Self { position, color }
     }
 }
