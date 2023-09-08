@@ -13,6 +13,14 @@ pub struct ShaderProgram {
     fragment_shader: Shader,
 }
 
+pub enum UniformValue {
+    Bool(bool),
+    Int(i32),
+    Float(f32),
+    Vec4(f32, f32, f32, f32),
+    Mat4(glm::Mat4),
+}
+
 #[allow(dead_code)]
 impl ShaderProgram {
     /// Creates a new shader program from the defeault vertex and fragment shaders.
@@ -87,46 +95,71 @@ impl ShaderProgram {
         gl::UseProgram(self.id);
     }
 
-    pub fn set_bool(&self, name: &str, value: bool) {
-        unsafe {
-            let name = CString::new(name).unwrap();
-
-            gl::Uniform1i(gl::GetUniformLocation(self.id, name.as_ptr()), value as i32);
-        }
-    }
-
-    pub fn set_int(&self, name: &str, value: i32) {
-        unsafe {
-            let name = CString::new(name).unwrap();
-
-            gl::Uniform1i(gl::GetUniformLocation(self.id, name.as_ptr()), value);
-        }
-    }
-
-    pub fn set_float(&self, name: &str, value: f32) {
-        unsafe {
-            let name = CString::new(name).unwrap();
-
-            gl::Uniform1f(gl::GetUniformLocation(self.id, name.as_ptr()), value);
-        }
-    }
-
-    pub fn set_vec4(&self, name: &str, x: f32, y: f32, z: f32, w: f32) {
-        unsafe {
-            let name = CString::new(name).unwrap();
-
-            gl::Uniform4f(gl::GetUniformLocation(self.id, name.as_ptr()), x, y, z, w);
-        }
-    }
-
-    pub fn set_mat4(&self, name: &str, mat: &glm::Mat4) {
+    pub fn set(&self, name: &str, value: UniformValue) {
         unsafe {
             let name = CString::new(name).unwrap();
             let location = gl::GetUniformLocation(self.id, name.as_ptr());
 
-            gl::UniformMatrix4fv(location, 1, gl::FALSE, mat.as_ptr());
+            match value {
+                UniformValue::Bool(value) => {
+                    gl::Uniform1i(location, value as i32);
+                }
+                UniformValue::Int(value) => {
+                    gl::Uniform1i(location, value);
+                }
+                UniformValue::Float(value) => {
+                    gl::Uniform1f(location, value);
+                }
+                UniformValue::Vec4(x, y, z, w) => {
+                    gl::Uniform4f(location, x, y, z, w);
+                }
+                UniformValue::Mat4(mat) => {
+                    gl::UniformMatrix4fv(location, 1, gl::FALSE, mat.as_ptr());
+                }
+            }
         }
     }
+
+    // pub fn set_bool(&self, name: &str, value: bool) {
+    //     unsafe {
+    //         let name = CString::new(name).unwrap();
+
+    //         gl::Uniform1i(gl::GetUniformLocation(self.id, name.as_ptr()), value as i32);
+    //     }
+    // }
+
+    // pub fn set_int(&self, name: &str, value: i32) {
+    //     unsafe {
+    //         let name = CString::new(name).unwrap();
+
+    //         gl::Uniform1i(gl::GetUniformLocation(self.id, name.as_ptr()), value);
+    //     }
+    // }
+
+    // pub fn set_float(&self, name: &str, value: f32) {
+    //     unsafe {
+    //         let name = CString::new(name).unwrap();
+
+    //         gl::Uniform1f(gl::GetUniformLocation(self.id, name.as_ptr()), value);
+    //     }
+    // }
+
+    // pub fn set_vec4(&self, name: &str, x: f32, y: f32, z: f32, w: f32) {
+    //     unsafe {
+    //         let name = CString::new(name).unwrap();
+
+    //         gl::Uniform4f(gl::GetUniformLocation(self.id, name.as_ptr()), x, y, z, w);
+    //     }
+    // }
+
+    // pub fn set_mat4(&self, name: &str, mat: &glm::Mat4) {
+    //     unsafe {
+    //         let name = CString::new(name).unwrap();
+    //         let location = gl::GetUniformLocation(self.id, name.as_ptr());
+
+    //         gl::UniformMatrix4fv(location, 1, gl::FALSE, mat.as_ptr());
+    //     }
+    // }
 }
 
 impl Drop for ShaderProgram {
@@ -134,5 +167,41 @@ impl Drop for ShaderProgram {
         unsafe {
             gl::DeleteProgram(self.id);
         }
+    }
+}
+
+impl From<bool> for UniformValue {
+    fn from(value: bool) -> Self {
+        Self::Bool(value)
+    }
+}
+
+impl From<i32> for UniformValue {
+    fn from(value: i32) -> Self {
+        Self::Int(value)
+    }
+}
+
+impl From<f32> for UniformValue {
+    fn from(value: f32) -> Self {
+        Self::Float(value)
+    }
+}
+
+impl From<(f32, f32, f32, f32)> for UniformValue {
+    fn from(value: (f32, f32, f32, f32)) -> Self {
+        Self::Vec4(value.0, value.1, value.2, value.3)
+    }
+}
+
+impl From<glm::Vec4> for UniformValue {
+    fn from(value: glm::Vec4) -> Self {
+        Self::Vec4(value.x, value.y, value.z, value.w)
+    }
+}
+
+impl From<glm::Mat4> for UniformValue {
+    fn from(value: glm::Mat4) -> Self {
+        Self::Mat4(value)
     }
 }
