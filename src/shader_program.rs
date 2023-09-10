@@ -80,7 +80,7 @@ impl ShaderProgram {
                     std::slice::from_raw_parts(info_log.as_ptr() as *const u8, info_log.len());
 
                 println!("{} while linking shader program:", "Error".red().bold());
-                println!("{}", std::str::from_utf8(&info_log).unwrap());
+                println!("{}", std::str::from_utf8(info_log).unwrap());
             }
 
             exit(1);

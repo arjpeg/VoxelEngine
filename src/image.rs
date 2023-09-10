@@ -22,7 +22,7 @@ pub struct Image {
 impl Image {
     pub fn new(filename: &'static str) -> Self {
         let mut img = ImageReader::open(filename)
-            .expect(format!("Failed to open image file '{}'", filename).as_str())
+            .unwrap_or_else(|_| panic!("Failed to open image file '{}'", filename))
             .decode()
             .unwrap();
 

@@ -16,7 +16,7 @@ use nalgebra_glm as glm;
 use gl::types::*;
 use glfw::{Action, Context, Key, WindowEvent};
 
-use crate::buffer::{vao::VAO, vbo::VBO, vertex::Vertex};
+use crate::buffer::{vao::Vao, vbo::Vbo, vertex::Vertex};
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
@@ -88,7 +88,7 @@ fn main() {
     };
 
     // Create the verticies
-    let verticies = VBO::new(
+    let verticies = Vbo::new(
         &[
             Vertex::new([-0.5, -0.5, -0.5], [0.0, 0.0, 1.0]),
             Vertex::new([0.5, -0.5, -0.5], [1.0, 0.0, 0.0]),
@@ -129,7 +129,7 @@ fn main() {
         ],
         gl::STATIC_DRAW,
     );
-    let mut vao = VAO::new();
+    let mut vao = Vao::new();
 
     verticies.bind();
 
@@ -185,7 +185,7 @@ fn main() {
             vao.bind();
 
             for (position, rotation) in cube_positions.iter() {
-                let model_matrix = glm::translate(&glm::identity(), &position);
+                let model_matrix = glm::translate(&glm::identity(), position);
                 let model_matrix = model_matrix * rotation;
 
                 shader_program.set("model", model_matrix.into());
@@ -244,6 +244,9 @@ fn main() {
                 match event {
                     WindowEvent::Key(key, _, action, _) => match (key, action) {
                         (Key::Q, Action::Press) => window.set_should_close(true),
+                        (Key::Escape, Action::Press) => {
+                            window.set_cursor_mode(glfw::CursorMode::Normal)
+                        }
                         _ => {}
                     },
                     WindowEvent::CursorPos(x, y) => {

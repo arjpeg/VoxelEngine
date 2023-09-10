@@ -1,24 +1,22 @@
-use std::mem::size_of;
-
 use gl::types::{GLenum, GLsizeiptr, GLvoid};
 
 use super::vertex::Vertex;
 
 /// A Vertex Buffer Object
-pub struct VBO {
+pub struct Vbo {
     id: u32,
 }
 
-impl VBO {
+impl Vbo {
     /// Creates a new VBO.
-    pub fn new(verticies: &[Vertex], usage: GLenum) -> VBO {
+    pub fn new(verticies: &[Vertex], usage: GLenum) -> Vbo {
         let mut id = 0;
 
         unsafe {
             gl::GenBuffers(1, &mut id);
         }
 
-        let mut this = VBO { id };
+        let mut this = Vbo { id };
         this.set_data(verticies, usage);
 
         this
@@ -44,7 +42,7 @@ impl VBO {
             self.bind();
             gl::BufferData(
                 gl::ARRAY_BUFFER,
-                (data.len() * size_of::<Vertex>()) as GLsizeiptr,
+                (std::mem::size_of_val(data)) as GLsizeiptr,
                 data.as_ptr() as *const GLvoid,
                 usage,
             );

@@ -1,16 +1,16 @@
-pub struct VAO {
+pub struct Vao {
     id: u32,
 }
 
-impl VAO {
-    pub fn new() -> VAO {
+impl Vao {
+    pub fn new() -> Vao {
         let mut id = 0;
 
         unsafe {
             gl::GenVertexArrays(1, &mut id);
         }
 
-        VAO { id }
+        Vao { id }
     }
 
     pub fn bind(&self) {

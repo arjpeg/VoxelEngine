@@ -1,23 +1,21 @@
 #![allow(dead_code)]
-use std::mem::size_of;
-
 use gl::types::{GLenum, GLsizeiptr, GLvoid};
 
 /// An Index Buffer Object
-pub struct IBO {
+pub struct Ibo {
     id: u32,
 }
 
-impl IBO {
+impl Ibo {
     /// Creates a new IBO.
-    pub fn new(indicies: &[u32], usage: GLenum) -> IBO {
+    pub fn new(indicies: &[u32], usage: GLenum) -> Ibo {
         let mut id = 0;
 
         unsafe {
             gl::GenBuffers(1, &mut id);
         }
 
-        let mut this = IBO { id };
+        let mut this = Ibo { id };
 
         this.set_data(indicies, usage);
 
@@ -44,7 +42,7 @@ impl IBO {
             self.bind();
             gl::BufferData(
                 gl::ELEMENT_ARRAY_BUFFER,
-                (data.len() * size_of::<u32>()) as GLsizeiptr,
+                (std::mem::size_of_val(data)) as GLsizeiptr,
                 data.as_ptr() as *const GLvoid,
                 usage,
             );

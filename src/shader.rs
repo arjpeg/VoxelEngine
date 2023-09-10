@@ -28,7 +28,7 @@ impl Shader {
             });
 
             let source = fs::read_to_string(self.path)
-                .expect(format!("Failed to read shader file, {}", self.path).as_str());
+                .unwrap_or_else(|_| panic!("Failed to read shader file, {}", self.path));
 
             let source = CString::new(source.as_bytes()).unwrap();
 
@@ -53,7 +53,7 @@ impl Shader {
                     "Error".red(),
                     self.path.bold()
                 );
-                println!("{}", std::str::from_utf8(&info_log).unwrap());
+                println!("{}", std::str::from_utf8(info_log).unwrap());
 
                 exit(1)
             }
