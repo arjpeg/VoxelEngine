@@ -1,9 +1,11 @@
 mod buffer;
 
+pub mod camera;
 mod image;
 mod shader;
 mod shader_program;
 
+use camera::Camera;
 use rand::Rng;
 use shader_program::ShaderProgram;
 use std::mem::size_of;
@@ -16,10 +18,14 @@ use glfw::{Action, Context, Key, WindowEvent};
 
 use crate::buffer::{vao::VAO, vbo::VBO, vertex::Vertex};
 
-const WIDTH: u32 = 800;
-const HEIGHT: u32 = 800;
+const WIDTH: u32 = 1000;
+const HEIGHT: u32 = 1000;
 
 const ASPECT_RATIO: f32 = WIDTH as f32 / HEIGHT as f32;
+
+fn key_is_down(window: &glfw::Window, key: Key) -> bool {
+    window.get_key(key) == Action::Press
+}
 
 fn main() {
     let mut rng = rand::thread_rng();
@@ -57,10 +63,11 @@ fn main() {
     // Load the shaders
     let shader_program = ShaderProgram::load();
 
+    // Generate random cube positions
     let cube_positions = {
         let mut cube_positions = Vec::new();
 
-        for _ in 0..10 {
+        for _ in 0..20 {
             let x: f32 = rng.gen_range(-5.0..5.0);
             let y: f32 = rng.gen_range(-5.0..5.0);
             let z: f32 = rng.gen_range(-5.0..5.0);
@@ -80,6 +87,7 @@ fn main() {
         cube_positions
     };
 
+    // Create the verticies
     let verticies = VBO::new(
         &[
             Vertex::new([-0.5, -0.5, -0.5], [0.0, 0.0, 1.0]),
@@ -137,28 +145,16 @@ fn main() {
     );
 
     // Create transformations
-    let fovy = 45.0f32.to_radians();
-    let near = 0.1;
-    let far = 100.0;
+    let mut camera = Camera::new(glm::vec3(0.0, 0.0, 3.0), 45.0);
+    let camera_sensitivity = 0.01f32;
 
-    let projection_matrix = glm::perspective(ASPECT_RATIO, fovy, near, far);
+    let projection_matrix = camera.get_projection_matrix(ASPECT_RATIO);
 
-    // Set up the camera
-    let mut camera_position = glm::vec3(0.0, 0.0, 6.0);
-
-    let mut camera_front = glm::vec3(0.0, 0.0, -1.0);
-    let camera_up = glm::vec3(0.0, 1.0, 0.0);
-
-    let mut yaw = -90.0f32;
-    let mut pitch = 0.0f32;
-
-    let sensitivity = 0.1f32;
     let mut last_x = WIDTH as f32 / 2.0;
     let mut last_y = HEIGHT as f32 / 2.0;
 
     // Track delta time
-    #[allow(unused_assignments)]
-    let mut delta_time = 0.0f32;
+    let mut delta_time;
     let mut last_frame = 0.0f32;
 
     // Loop until the user closes the window
@@ -169,34 +165,20 @@ fn main() {
         // Poll for and process events
         glfw.poll_events();
 
+        // Calculate delta time
+        let time = glfw.get_time() as f32;
+
+        delta_time = time - last_frame;
+        last_frame = time;
+
         unsafe {
             shader_program.use_program();
 
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
-            let time = glfw.get_time() as f32;
-
-            delta_time = time - last_frame;
-            last_frame = time;
-
-            // Calculate the view matrix
-            camera_front = glm::vec3(
-                yaw.to_radians().cos() * pitch.to_radians().cos(),
-                pitch.to_radians().sin(),
-                yaw.to_radians().sin() * pitch.to_radians().cos(),
-            );
-
-            camera_front.normalize_mut();
-
-            let view_matrix = glm::look_at(
-                &camera_position,
-                &(camera_position + camera_front),
-                &camera_up,
-            );
-
             // Bind uniforms
-            shader_program.set("view", view_matrix.into());
+            shader_program.set("view", camera.get_view_matrix().into());
             shader_program.set("projection", projection_matrix.into());
 
             // Draw the triangles
@@ -221,54 +203,61 @@ fn main() {
         }
 
         // Handle events
-        let direction_map: [(&[Key], glm::TVec3<f32>); 4] = [
-            (&[Key::A, Key::Left], glm::vec3(-0.1, 0.0, 0.0)),
-            (&[Key::D, Key::Right], glm::vec3(0.1, 0.0, 0.0)),
-            (&[Key::S, Key::Down], glm::vec3(0.0, 0.0, -0.1)),
-            (&[Key::W, Key::Up], glm::vec3(0.0, 0.0, 0.1)),
-        ];
+        {
+            let camera_speed = 10.0 * delta_time;
 
-        let camera_speed = 100.0 * delta_time;
+            if key_is_down(&window, Key::W) {
+                camera.move_in_dir(
+                    glm::normalize(&glm::vec3(camera.front.x, 0.0, camera.front.z)) * camera_speed,
+                )
+            }
 
-        for (keys, direction) in direction_map.iter() {
-            for key in keys.iter() {
-                match window.get_key(*key) {
-                    Action::Press | Action::Repeat => {
-                        camera_position += {
-                            match key {
-                                Key::A | Key::D => {
-                                    glm::normalize(&glm::cross(&camera_front, &camera_up))
-                                        * camera_speed
-                                        * direction.x
-                                }
-                                Key::W | Key::S => camera_front * camera_speed * direction.z,
-                                _ => direction * camera_speed,
-                            }
-                        }
+            if key_is_down(&window, Key::S) {
+                camera.move_in_dir(
+                    glm::normalize(&glm::vec3(camera.front.x, 0.0, camera.front.z))
+                        * camera_speed
+                        * -1.0,
+                )
+            }
+
+            if key_is_down(&window, Key::A) {
+                camera.move_in_dir(
+                    glm::normalize(&glm::cross(&camera.front, &camera.up)) * camera_speed * -1.0,
+                )
+            }
+
+            if key_is_down(&window, Key::D) {
+                camera.move_in_dir(
+                    glm::normalize(&glm::cross(&camera.front, &camera.up)) * camera_speed * 1.0,
+                )
+            }
+
+            if window.get_key(Key::Space) == Action::Press {
+                camera.move_in_dir(glm::vec3(0.0, 1.0, 0.0) * camera_speed);
+            }
+
+            if window.get_key(Key::LeftShift) == Action::Press {
+                camera.move_in_dir(glm::vec3(0.0, -1.0, 0.0) * camera_speed);
+            }
+
+            for (_, event) in glfw::flush_messages(&events) {
+                match event {
+                    WindowEvent::Key(key, _, action, _) => match (key, action) {
+                        (Key::Q, Action::Press) => window.set_should_close(true),
+                        _ => {}
+                    },
+                    WindowEvent::CursorPos(x, y) => {
+                        let x_offset = x as f32 - last_x;
+                        let y_offset = last_y - y as f32;
+
+                        last_x = x as f32;
+                        last_y = y as f32;
+
+                        camera.rotate(x_offset * camera_sensitivity, y_offset * camera_sensitivity);
                     }
                     _ => {}
-                }
+                };
             }
-        }
-
-        for (_, event) in glfw::flush_messages(&events) {
-            match event {
-                WindowEvent::Key(key, _, action, _) => match (key, action) {
-                    (Key::Escape, Action::Press) => window.set_should_close(true),
-                    _ => {}
-                },
-                WindowEvent::CursorPos(x, y) => {
-                    let x_offset = x as f32 - last_x;
-                    let y_offset = last_y - y as f32;
-
-                    last_x = x as f32;
-                    last_y = y as f32;
-
-                    yaw += x_offset * sensitivity;
-                    pitch += y_offset * sensitivity;
-                }
-                _ => {}
-            };
         }
     }
 }
