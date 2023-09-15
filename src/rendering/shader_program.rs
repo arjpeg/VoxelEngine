@@ -5,7 +5,7 @@ use owo_colors::OwoColorize;
 
 use nalgebra_glm as glm;
 
-use crate::shader::{Shader, ShaderKind};
+use crate::rendering::shader::{Shader, ShaderKind};
 
 pub struct ShaderProgram {
     id: u32,
@@ -26,7 +26,7 @@ impl ShaderProgram {
     /// Creates a new shader program from the defeault vertex and fragment shaders.
     /// (./res/shaders/vertex.glsl, ./res/shaders/frag.glsl)
     pub fn load() -> Self {
-        Self::new("./res/shaders/vertex.glsl", "./res/shaders/frag.glsl")
+        Self::new("./assets/shaders/vertex.glsl", "./assets/shaders/frag.glsl")
     }
 
     /// Creates a new shader program from the given vertex and fragment shaders.
@@ -95,7 +95,9 @@ impl ShaderProgram {
         gl::UseProgram(self.id);
     }
 
-    pub fn set(&self, name: &str, value: UniformValue) {
+    pub fn set(&self, name: &str, value: impl Into<UniformValue>) {
+        let value = value.into();
+
         unsafe {
             let name = CString::new(name).unwrap();
             let location = gl::GetUniformLocation(self.id, name.as_ptr());
@@ -119,47 +121,6 @@ impl ShaderProgram {
             }
         }
     }
-
-    // pub fn set_bool(&self, name: &str, value: bool) {
-    //     unsafe {
-    //         let name = CString::new(name).unwrap();
-
-    //         gl::Uniform1i(gl::GetUniformLocation(self.id, name.as_ptr()), value as i32);
-    //     }
-    // }
-
-    // pub fn set_int(&self, name: &str, value: i32) {
-    //     unsafe {
-    //         let name = CString::new(name).unwrap();
-
-    //         gl::Uniform1i(gl::GetUniformLocation(self.id, name.as_ptr()), value);
-    //     }
-    // }
-
-    // pub fn set_float(&self, name: &str, value: f32) {
-    //     unsafe {
-    //         let name = CString::new(name).unwrap();
-
-    //         gl::Uniform1f(gl::GetUniformLocation(self.id, name.as_ptr()), value);
-    //     }
-    // }
-
-    // pub fn set_vec4(&self, name: &str, x: f32, y: f32, z: f32, w: f32) {
-    //     unsafe {
-    //         let name = CString::new(name).unwrap();
-
-    //         gl::Uniform4f(gl::GetUniformLocation(self.id, name.as_ptr()), x, y, z, w);
-    //     }
-    // }
-
-    // pub fn set_mat4(&self, name: &str, mat: &glm::Mat4) {
-    //     unsafe {
-    //         let name = CString::new(name).unwrap();
-    //         let location = gl::GetUniformLocation(self.id, name.as_ptr());
-
-    //         gl::UniformMatrix4fv(location, 1, gl::FALSE, mat.as_ptr());
-    //     }
-    // }
 }
 
 impl Drop for ShaderProgram {

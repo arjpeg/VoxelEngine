@@ -1,22 +1,15 @@
-mod buffer;
+mod buffers;
 
-pub mod camera;
-mod image;
-mod shader;
-mod shader_program;
-
-use camera::Camera;
 use rand::Rng;
-use shader_program::ShaderProgram;
-use std::mem::size_of;
 
-#[allow(unused_imports)]
 use nalgebra_glm as glm;
+
+mod rendering;
+
+use rendering::{camera::Camera, shader_program::ShaderProgram, shapes::cube::Cube};
 
 use gl::types::*;
 use glfw::{Action, Context, Key, WindowEvent};
-
-use crate::buffer::{vao::Vao, vbo::Vbo, vertex::Vertex};
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
@@ -64,85 +57,34 @@ fn main() {
     let shader_program = ShaderProgram::load();
 
     // Generate random cube positions
-    let cube_positions = {
-        let mut cube_positions = Vec::new();
+    let cubes = {
+        let mut cubes = Vec::new();
 
         for _ in 0..20 {
-            let x: f32 = rng.gen_range(-5.0..5.0);
-            let y: f32 = rng.gen_range(-5.0..5.0);
-            let z: f32 = rng.gen_range(-5.0..5.0);
+            let x: f32 = rng.gen_range(-10.0..10.0);
+            let y: f32 = rng.gen_range(-10.0..10.0);
+            let z: f32 = rng.gen_range(-10.0..10.0);
 
-            // calculate rotation
-            let x_rot: f32 = rng.gen_range(0.0..360.0);
+            let r = rng.gen_range(0.0..1.0);
+            let g = rng.gen_range(0.0..1.0);
+            let b = rng.gen_range(0.0..1.0);
 
-            let rotation = glm::rotate(
-                &glm::identity(),
-                x_rot.to_radians(),
-                &glm::vec3(1.0, 0.0, 0.0),
+            let mut cube = Cube::new_with_color(glm::vec3(x, y, z), glm::vec3(r, g, b));
+
+            cube.model_matrix = glm::scale(
+                &glm::rotate(
+                    &cube.model_matrix,
+                    rng.gen_range(0.0..360.0),
+                    &glm::vec3(1.0, 0.0, 0.0),
+                ),
+                &glm::vec3(2.0, 2.0, 2.0),
             );
 
-            cube_positions.push((glm::vec3(x, y, z), rotation));
+            cubes.push(cube);
         }
 
-        cube_positions
+        cubes
     };
-
-    // Create the verticies
-    let verticies = Vbo::new(
-        &[
-            Vertex::new([-0.5, -0.5, -0.5], [0.0, 0.0, 1.0]),
-            Vertex::new([0.5, -0.5, -0.5], [1.0, 0.0, 0.0]),
-            Vertex::new([0.5, 0.5, -0.5], [1.0, 1.0, 0.0]),
-            Vertex::new([0.5, 0.5, -0.5], [1.0, 1.0, 0.0]),
-            Vertex::new([-0.5, 0.5, -0.5], [0.0, 1.0, 1.0]),
-            Vertex::new([-0.5, -0.5, -0.5], [0.0, 0.0, 1.0]),
-            Vertex::new([-0.5, -0.5, 0.5], [0.0, 0.0, 1.0]),
-            Vertex::new([0.5, -0.5, 0.5], [1.0, 0.0, 0.0]),
-            Vertex::new([0.5, 0.5, 0.5], [1.0, 1.0, 0.0]),
-            Vertex::new([0.5, 0.5, 0.5], [1.0, 1.0, 0.0]),
-            Vertex::new([-0.5, 0.5, 0.5], [0.0, 1.0, 1.0]),
-            Vertex::new([-0.5, -0.5, 0.5], [0.0, 0.0, 1.0]),
-            Vertex::new([-0.5, 0.5, 0.5], [1.0, 0.0, 0.0]),
-            Vertex::new([-0.5, 0.5, -0.5], [1.0, 1.0, 0.0]),
-            Vertex::new([-0.5, -0.5, -0.5], [0.0, 1.0, 1.0]),
-            Vertex::new([-0.5, -0.5, -0.5], [0.0, 1.0, 0.0]),
-            Vertex::new([-0.5, -0.5, 0.5], [0.0, 0.0, 1.0]),
-            Vertex::new([-0.5, 0.5, 0.5], [1.0, 0.0, 1.0]),
-            Vertex::new([0.5, 0.5, 0.5], [1.0, 0.0, 1.0]),
-            Vertex::new([0.5, 0.5, -0.5], [1.0, 1.0, 0.0]),
-            Vertex::new([0.5, -0.5, -0.5], [0.0, 1.0, 0.0]),
-            Vertex::new([0.5, -0.5, -0.5], [0.0, 1.0, 0.0]),
-            Vertex::new([0.5, -0.5, 0.5], [0.0, 0.0, 1.0]),
-            Vertex::new([0.5, 0.5, 0.5], [1.0, 0.0, 1.0]),
-            Vertex::new([-0.5, -0.5, -0.5], [0.0, 1.0, 1.0]),
-            Vertex::new([0.5, -0.5, -0.5], [1.0, 1.0, 1.0]),
-            Vertex::new([0.5, -0.5, 0.5], [1.0, 0.0, 1.0]),
-            Vertex::new([0.5, -0.5, 0.5], [1.0, 0.0, 1.0]),
-            Vertex::new([-0.5, -0.5, 0.5], [0.0, 0.0, 1.0]),
-            Vertex::new([-0.5, -0.5, -0.5], [0.0, 1.0, 0.0]),
-            Vertex::new([-0.5, 0.5, -0.5], [0.0, 1.0, 0.0]),
-            Vertex::new([0.5, 0.5, -0.5], [1.0, 1.0, 0.0]),
-            Vertex::new([0.5, 0.5, 0.5], [1.0, 0.0, 1.0]),
-            Vertex::new([0.5, 0.5, 0.5], [1.0, 0.0, 0.0]),
-            Vertex::new([-0.5, 0.5, 0.5], [0.0, 0.0, 1.0]),
-            Vertex::new([-0.5, 0.5, -0.5], [0.0, 1.0, 0.0]),
-        ],
-        gl::STATIC_DRAW,
-    );
-    let mut vao = Vao::new();
-
-    verticies.bind();
-
-    vao.set_attribute(0, 3, gl::FLOAT, false, 6 * size_of::<GLfloat>(), 0);
-
-    vao.set_attribute(
-        1,
-        3,
-        gl::FLOAT,
-        false,
-        6 * size_of::<GLfloat>(),
-        3 * size_of::<GLfloat>(),
-    );
 
     // Create transformations
     let mut camera = Camera::new(glm::vec3(0.0, 0.0, 3.0), 45.0);
@@ -178,17 +120,23 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
             // Bind uniforms
-            shader_program.set("view", camera.get_view_matrix().into());
-            shader_program.set("projection", projection_matrix.into());
+            shader_program.set("view", camera.get_view_matrix());
+            shader_program.set("projection", projection_matrix);
 
             // Draw the triangles
-            vao.bind();
+            // for (position, rotation) in cube_positions.iter() {
+            //     let model_matrix = glm::translate(&glm::identity(), position);
+            //     let model_matrix = model_matrix * rotation;
 
-            for (position, rotation) in cube_positions.iter() {
-                let model_matrix = glm::translate(&glm::identity(), position);
-                let model_matrix = model_matrix * rotation;
+            //     shader_program.set("model", model_matrix.into());
 
-                shader_program.set("model", model_matrix.into());
+            //     gl::DrawArrays(gl::TRIANGLES, 0, 36);
+            // }
+            for cube in cubes.iter() {
+                cube.vbo.bind();
+                cube.vao.bind();
+
+                shader_program.set("model", cube.model_matrix);
 
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
             }
