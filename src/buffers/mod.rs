@@ -4,4 +4,3 @@
 pub mod ibo;
 pub mod vao;
 pub mod vbo;
-pub mod vertex;
