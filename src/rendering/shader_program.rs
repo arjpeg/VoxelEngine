@@ -23,12 +23,6 @@ pub enum UniformValue {
 
 #[allow(dead_code)]
 impl ShaderProgram {
-    /// Creates a new shader program from the defeault vertex and fragment shaders.
-    /// (./res/shaders/vertex.glsl, ./res/shaders/frag.glsl)
-    pub fn load() -> Self {
-        Self::new("./assets/shaders/vertex.glsl", "./assets/shaders/frag.glsl")
-    }
-
     /// Creates a new shader program from the given vertex and fragment shaders.
     pub fn new(
         vertex_shader_path: &'static str,
@@ -120,6 +114,14 @@ impl ShaderProgram {
                 }
             }
         }
+    }
+}
+
+impl Default for ShaderProgram {
+    /// Creates a new shader program from the defeault vertex and fragment shaders.
+    /// (./res/shaders/vertex.glsl, ./res/shaders/frag.glsl)
+    fn default() -> Self {
+        Self::new("./assets/shaders/vertex.glsl", "./assets/shaders/frag.glsl")
     }
 }
 

@@ -9,7 +9,7 @@ mod rendering;
 use rendering::{camera::Camera, shader_program::ShaderProgram, shapes::cube::Cube};
 
 use gl::types::*;
-use glfw::{Action, Context, Key, WindowEvent};
+use glfw::{Action, Context, Key, MouseButton, WindowEvent};
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
@@ -54,7 +54,7 @@ fn main() {
     }
 
     // Load the shaders
-    let shader_program = ShaderProgram::load();
+    let shader_program: ShaderProgram = Default::default();
 
     // Generate random cube positions
     let cubes = {
@@ -99,8 +99,30 @@ fn main() {
     let mut delta_time;
     let mut last_frame = 0.0f32;
 
+    let mut wire_frame = false;
+    let mut last_wire_frame_timer = 0.0f32;
+
+    let mut escaped = false;
+
     // Loop until the user closes the window
     while !window.should_close() {
+        // Check if the user wants to toggle wireframe mode
+        if key_is_down(&window, Key::F) && last_wire_frame_timer > 0.2 {
+            last_wire_frame_timer = 0.0;
+
+            if !wire_frame {
+                unsafe {
+                    gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+                }
+            } else {
+                unsafe {
+                    gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+                }
+            }
+
+            wire_frame = !wire_frame;
+        }
+
         // Swap front and back buffers
         window.swap_buffers();
 
@@ -112,6 +134,9 @@ fn main() {
 
         delta_time = time - last_frame;
         last_frame = time;
+
+        // Update the wireframe timer
+        last_wire_frame_timer += delta_time;
 
         unsafe {
             shader_program.use_program();
@@ -193,11 +218,21 @@ fn main() {
                     WindowEvent::Key(key, _, action, _) => match (key, action) {
                         (Key::Q, Action::Press) => window.set_should_close(true),
                         (Key::Escape, Action::Press) => {
-                            window.set_cursor_mode(glfw::CursorMode::Normal)
+                            if !escaped {
+                                window.set_cursor_mode(glfw::CursorMode::Normal);
+                            } else {
+                                window.set_cursor_mode(glfw::CursorMode::Disabled);
+                            }
+
+                            escaped = !escaped;
                         }
                         _ => {}
                     },
                     WindowEvent::CursorPos(x, y) => {
+                        if escaped {
+                            continue;
+                        }
+
                         let x_offset = x as f32 - last_x;
                         let y_offset = last_y - y as f32;
 
@@ -205,6 +240,12 @@ fn main() {
                         last_y = y as f32;
 
                         camera.rotate(x_offset * camera_sensitivity, y_offset * camera_sensitivity);
+                    }
+                    WindowEvent::MouseButton(MouseButton::Button1, Action::Press, _) => {
+                        if escaped {
+                            escaped = false;
+                            window.set_cursor_mode(glfw::CursorMode::Disabled);
+                        }
                     }
                     _ => {}
                 };
