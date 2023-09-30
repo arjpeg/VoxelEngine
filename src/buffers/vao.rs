@@ -1,3 +1,5 @@
+/// Represents a Vertex Array Object (VAO) in OpenGL.
+#[derive(Debug, Clone, Copy)]
 pub struct Vao {
     id: u32,
 }

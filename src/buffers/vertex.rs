@@ -6,13 +6,11 @@ use nalgebra_glm as glm;
 pub struct Vertex {
     /// The position of the vertex.
     pub position: glm::Vec3,
-    /// The color of the vertex.
-    pub color: glm::Vec3,
 }
 
 impl Vertex {
     /// Creates a new vertex.
-    pub fn new(position: glm::Vec3, color: glm::Vec3) -> Self {
-        Self { position, color }
+    pub fn new(position: glm::Vec3) -> Self {
+        Self { position }
     }
 }

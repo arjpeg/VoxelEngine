@@ -1,12 +1,19 @@
 mod buffers;
+pub mod chunk;
+pub mod voxel;
 
-use rand::Rng;
+use std::mem::size_of;
+
+use buffers::{vao::Vao, vbo::Vbo, vertex::Vertex};
+use chunk::Chunk;
 
 use nalgebra_glm as glm;
 
 mod rendering;
 
-use rendering::{camera::Camera, shader::shader_program::ShaderProgram, shapes::cube::Cube};
+use rendering::{
+    camera::Camera, shader::shader_program::ShaderProgram, shapes::cube::CUBE_POSITIONS,
+};
 
 use gl::types::*;
 use glfw::{Action, Context, Key, MouseButton, WindowEvent};
@@ -20,8 +27,16 @@ fn key_is_down(window: &glfw::Window, key: Key) -> bool {
     window.get_key(key) == Action::Press
 }
 
+fn get_error(label: &str) {
+    let mut error: GLenum = unsafe { gl::GetError() };
+
+    while error != gl::NO_ERROR {
+        println!("Error ({}): {}", label, error);
+        error = unsafe { gl::GetError() };
+    }
+}
+
 fn main() {
-    let mut rng = rand::thread_rng();
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
     glfw.window_hint(glfw::WindowHint::ContextVersion(4, 1));
@@ -56,35 +71,8 @@ fn main() {
     // Load the shaders
     let shader_program: ShaderProgram = Default::default();
 
-    // Generate random cube positions
-    let cubes = {
-        let mut cubes = Vec::new();
-
-        for _ in 0..20 {
-            let x: f32 = rng.gen_range(-10.0..10.0);
-            let y: f32 = rng.gen_range(-10.0..10.0);
-            let z: f32 = rng.gen_range(-10.0..10.0);
-
-            let r = rng.gen_range(0.0..1.0);
-            let g = rng.gen_range(0.0..1.0);
-            let b = rng.gen_range(0.0..1.0);
-
-            let mut cube = Cube::new_with_color(glm::vec3(x, y, z), glm::vec3(r, g, b));
-
-            cube.model_matrix = glm::scale(
-                &glm::rotate(
-                    &cube.model_matrix,
-                    rng.gen_range(0.0..360.0),
-                    &glm::vec3(1.0, 0.0, 0.0),
-                ),
-                &glm::vec3(2.0, 2.0, 2.0),
-            );
-
-            cubes.push(cube);
-        }
-
-        cubes
-    };
+    // Create a new chunk
+    let chunk = Chunk::new(glm::vec2(0.0, 0.0));
 
     // Create transformations
     let mut camera = Camera::new(glm::vec3(0.0, 0.0, 3.0), 45.0);
@@ -103,6 +91,19 @@ fn main() {
     let mut last_wire_frame_timer = 0.0f32;
 
     let mut escaped = false;
+
+    let cube_vbo = Vbo::new(&CUBE_POSITIONS, gl::STATIC_DRAW);
+
+    get_error("Cube VBO");
+
+    let mut cube_vao = Vao::new();
+
+    cube_vbo.bind();
+    cube_vao.bind();
+
+    cube_vao.set_attribute(0, 3, gl::FLOAT, false, size_of::<Vertex>(), 0);
+
+    get_error("Cube VAO");
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -135,6 +136,8 @@ fn main() {
         delta_time = time - last_frame;
         last_frame = time;
 
+        println!("FPS: {}", 1.0 / delta_time);
+
         // Update the wireframe timer
         last_wire_frame_timer += delta_time;
 
@@ -145,33 +148,28 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
             // Bind uniforms
-            shader_program.set("view", camera.get_view_matrix());
-            shader_program.set("projection", projection_matrix);
+            shader_program.set_uniform("view", camera.get_view_matrix());
+            shader_program.set_uniform("projection", projection_matrix);
 
-            // Draw the triangles
-            // for (position, rotation) in cube_positions.iter() {
-            //     let model_matrix = glm::translate(&glm::identity(), position);
-            //     let model_matrix = model_matrix * rotation;
+            // Bind the VAO
+            cube_vao.bind();
 
-            //     shader_program.set("model", model_matrix.into());
+            get_error("Uniforms");
 
-            //     gl::DrawArrays(gl::TRIANGLES, 0, 36);
-            // }
-            for cube in cubes.iter() {
-                cube.vbo.bind();
-                cube.vao.bind();
-
-                shader_program.set("model", cube.model_matrix);
+            // Render the chunk
+            for cube in chunk.cubes.iter() {
+                shader_program.set_uniform(
+                    "model",
+                    glm::translate(
+                        &glm::identity(),
+                        &glm::vec3(cube.x as f32, cube.y as f32, cube.z as f32),
+                    ),
+                );
 
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
-            }
 
-            // check for errors
-            let mut error: GLenum = gl::GetError();
-
-            while error != gl::NO_ERROR {
-                println!("Error: {}", error);
-                error = gl::GetError();
+                get_error("DrawArrays");
+                // panic!();
             }
         }
 

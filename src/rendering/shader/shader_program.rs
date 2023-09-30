@@ -89,7 +89,7 @@ impl ShaderProgram {
         gl::UseProgram(self.id);
     }
 
-    pub fn set(&self, name: &str, value: impl Into<UniformValue>) {
+    pub fn set_uniform(&self, name: &str, value: impl Into<UniformValue>) {
         let value = value.into();
 
         unsafe {
