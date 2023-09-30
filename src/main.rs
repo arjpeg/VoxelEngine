@@ -6,7 +6,7 @@ use nalgebra_glm as glm;
 
 mod rendering;
 
-use rendering::{camera::Camera, shader_program::ShaderProgram, shapes::cube::Cube};
+use rendering::{camera::Camera, shader::shader_program::ShaderProgram, shapes::cube::Cube};
 
 use gl::types::*;
 use glfw::{Action, Context, Key, MouseButton, WindowEvent};

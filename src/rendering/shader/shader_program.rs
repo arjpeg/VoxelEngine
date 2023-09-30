@@ -5,7 +5,7 @@ use owo_colors::OwoColorize;
 
 use nalgebra_glm as glm;
 
-use crate::rendering::shader::{Shader, ShaderKind};
+use crate::rendering::shader::shader::{Shader, ShaderKind};
 
 pub struct ShaderProgram {
     id: u32,

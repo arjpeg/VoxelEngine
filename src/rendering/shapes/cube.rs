@@ -26,6 +26,7 @@ pub struct Cube {
     pub vao: Vao,
 }
 
+#[allow(dead_code)]
 impl Cube {
     /// Creates a new cube.
     pub fn new(position: glm::Vec3) -> Self {
