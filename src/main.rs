@@ -76,11 +76,22 @@ fn main() {
     // Load the shaders
     let shader_program: ShaderProgram = Default::default();
 
-    // Create a new chunk
-    let mut chunk = Chunk::new((0, 0));
-    let gen_strat = ChunkGenerationStrategy::Perlin2d;
+    // Create new chunks
+    let chunks = {
+        let mut chunks = Vec::new();
+        let gen_strat = ChunkGenerationStrategy::Perlin2d;
 
-    gen_strat.apply(&mut chunk);
+        for x in -2..2 {
+            for z in -2..2 {
+                let mut chunk = Chunk::new((x, z));
+                gen_strat.apply(&mut chunk);
+
+                chunks.push(chunk);
+            }
+        }
+
+        chunks
+    };
 
     // Create transformations
     let mut camera = Camera::new(glm::vec3(0.0, 0.0, 20.0), 45.0);
@@ -164,25 +175,27 @@ fn main() {
 
             get_gl_error!("Uniforms");
 
-            // Render the chunk
-            for cube in chunk
-                .cubes
-                .iter()
-                .filter(|cube| cube.kind != VoxelKind::Air)
-            {
-                let position = cube.position;
+            // Render the chunks
+            for chunk in chunks.iter() {
+                for cube in chunk
+                    .cubes
+                    .iter()
+                    .filter(|cube| cube.kind != VoxelKind::Air)
+                {
+                    let position = cube.position;
 
-                shader_program.set_uniform(
-                    "model",
-                    glm::translate(
-                        &glm::identity(),
-                        &glm::vec3(position.x as f32, position.y as f32, position.z as f32),
-                    ),
-                );
+                    shader_program.set_uniform(
+                        "model",
+                        glm::translate(
+                            &glm::identity(),
+                            &glm::vec3(position.0 as f32, position.1 as f32, position.2 as f32),
+                        ),
+                    );
 
-                gl::DrawArrays(gl::TRIANGLES, 0, 36);
+                    gl::DrawArrays(gl::TRIANGLES, 0, 36);
 
-                get_gl_error!("DrawArrays");
+                    get_gl_error!("DrawArrays");
+                }
             }
         }
 

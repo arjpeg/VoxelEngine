@@ -1,10 +1,8 @@
-use nalgebra_glm as glm;
-
 /// Represents a voxel in the world.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Voxel {
     /// The position of the voxel.
-    pub position: glm::UVec3,
+    pub position: (i32, i32, i32),
 
     /// The kind of voxel.
     pub kind: VoxelKind,

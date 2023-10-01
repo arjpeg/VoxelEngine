@@ -1,4 +1,3 @@
-use nalgebra_glm as glm;
 use noise::NoiseFn;
 use owo_colors::OwoColorize;
 
@@ -25,7 +24,7 @@ impl Chunk {
     /// Creates a new chunk.
     pub fn new(position: (i32, i32)) -> Self {
         let mut cubes = [Voxel {
-            position: glm::vec3(0, 0, 0),
+            position: (0, 0, 0),
             kind: VoxelKind::Air,
         }; CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT];
 
@@ -38,8 +37,11 @@ impl Chunk {
         for x in 0..CHUNK_WIDTH {
             for z in 0..CHUNK_WIDTH {
                 for y in 0..CHUNK_HEIGHT {
-                    cubes[get_chunk_index(x, y, z)].position =
-                        glm::vec3(x as u32, y as u32, z as u32);
+                    let true_x = x as i32 + position.0 * CHUNK_WIDTH as i32;
+                    let true_y = y as i32;
+                    let true_z = z as i32 + position.1 * CHUNK_WIDTH as i32;
+
+                    cubes[get_chunk_index(x, y, z)].position = (true_x, true_y, true_z);
                 }
             }
         }
@@ -92,14 +94,14 @@ impl ChunkGenerationStrategy {
         for x in 0..CHUNK_WIDTH {
             for z in 0..CHUNK_WIDTH {
                 let noise_value = noise.get([
-                    (x + chunk.position.0 as usize) as f64 / 16.0,
-                    (z + chunk.position.1 as usize) as f64 / 16.0,
+                    (x as i32 + chunk.position.0 * CHUNK_WIDTH as i32) as f64 / 16.0,
+                    (z as i32 + chunk.position.1 * CHUNK_WIDTH as i32) as f64 / 16.0,
                 ]) as f32;
 
                 let height = (noise_value * CHUNK_HEIGHT as f32).max(1.0) as usize;
 
                 for y in 0..height {
-                    chunk.cubes[get_chunk_index(x, y as usize, z)].kind = VoxelKind::Grass;
+                    chunk.cubes[get_chunk_index(x, y, z)].kind = VoxelKind::Grass;
                 }
             }
         }
@@ -111,9 +113,9 @@ impl ChunkGenerationStrategy {
 
         for voxel in chunk.cubes.iter_mut() {
             let noise_value = noise.get([
-                voxel.position.x as f64 / 16.0,
-                voxel.position.y as f64 / 16.0,
-                voxel.position.z as f64 / 16.0,
+                voxel.position.0 as f64 / 16.0,
+                voxel.position.1 as f64 / 16.0,
+                voxel.position.2 as f64 / 16.0,
             ]) as f32;
 
             if noise_value > 0.0 {
@@ -129,7 +131,7 @@ impl ChunkGenerationStrategy {
         for voxel in chunk
             .cubes
             .iter_mut()
-            .filter(|voxel| voxel.position.y <= height)
+            .filter(|voxel| voxel.position.1 <= height as i32)
         {
             voxel.kind = kind;
         }
