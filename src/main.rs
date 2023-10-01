@@ -3,9 +3,7 @@ pub mod chunk;
 pub mod utils;
 pub mod voxel;
 
-use std::mem::size_of;
-
-use buffers::{vao::Vao, vbo::Vbo};
+use buffers::vbo::Vbo;
 use chunk::Chunk;
 
 use nalgebra_glm as glm;
@@ -17,7 +15,7 @@ use rendering::{
     camera::Camera, shader::shader_program::ShaderProgram, shapes::cube::CUBE_POSITIONS,
 };
 
-use crate::{utils::key_is_down, voxel::VoxelKind};
+use crate::{buffers::vao_builder::VaoBuilder, utils::key_is_down, voxel::VoxelKind};
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
@@ -63,7 +61,7 @@ fn main() {
     let chunk = Chunk::new(glm::vec2(0.0, 0.0));
 
     // Create transformations
-    let mut camera = Camera::new(glm::vec3(0.0, 0.0, 3.0), 45.0);
+    let mut camera = Camera::new(glm::vec3(0.0, 0.0, 20.0), 45.0);
     let camera_sensitivity = 0.01f32;
 
     let projection_matrix = camera.get_projection_matrix(ASPECT_RATIO);
@@ -81,16 +79,10 @@ fn main() {
     let mut escaped = false;
 
     let cube_vbo = Vbo::new(&CUBE_POSITIONS, gl::STATIC_DRAW);
-
+    cube_vbo.bind();
     get_gl_error!("Cube VBO");
 
-    let mut cube_vao = Vao::new();
-
-    cube_vbo.bind();
-    cube_vao.bind();
-
-    cube_vao.set_attribute(0, 3, gl::FLOAT, false, size_of::<(f32, f32, f32)>(), 0);
-
+    let cube_vao = VaoBuilder::new().add_layer::<(f32, f32, f32)>(3).build();
     get_gl_error!("Cube VAO");
 
     // Loop until the user closes the window

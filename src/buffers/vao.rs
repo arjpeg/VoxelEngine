@@ -1,9 +1,10 @@
 /// Represents a Vertex Array Object (VAO) in OpenGL.
 #[derive(Debug, Clone, Copy)]
 pub struct Vao {
-    id: u32,
+    pub id: u32,
 }
 
+#[allow(dead_code)]
 impl Vao {
     pub fn new() -> Vao {
         let mut id = 0;

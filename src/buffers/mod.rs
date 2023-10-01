@@ -3,4 +3,5 @@
 // and Vertex Array Objects (VAOs).
 pub mod ibo;
 pub mod vao;
+pub mod vao_builder;
 pub mod vbo;

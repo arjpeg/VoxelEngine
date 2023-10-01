@@ -19,10 +19,10 @@ macro_rules! get_gl_error {
         debug_assert!({
             #[allow(unused_unsafe)]
             unsafe {
-                let mut error = gl::GetError();
-                while error != gl::NO_ERROR {
+                let error = gl::GetError();
+                if error != gl::NO_ERROR {
                     println!(
-                        "OpenGL error in '{}' (error code: {} - {})",
+                        "OpenGL error at marker '{}' (error code: {} - {})",
                         $fn_name,
                         error,
                         match error {
@@ -39,7 +39,7 @@ macro_rules! get_gl_error {
                     );
                     println!("{}:{}\n", file!(), line!());
 
-                    error = gl::GetError();
+                    panic!("OpenGL error");
                 }
 
                 true
