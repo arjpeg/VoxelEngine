@@ -31,8 +31,6 @@ impl VaoBuilder {
     pub fn build(&self) -> Vao {
         let mut id = 0;
 
-        println!("{:?}", self.layers);
-
         unsafe {
             // Generate the VAO
             gl::GenVertexArrays(1, &mut id);
@@ -57,18 +55,6 @@ impl VaoBuilder {
                     gl::FALSE,
                     stride as i32,
                     offset as *const GLvoid,
-                );
-
-                println!(
-                    "{:?}",
-                    (
-                        0,
-                        layer.0 as i32,
-                        gl::FLOAT,
-                        gl::FALSE,
-                        stride as i32,
-                        offset as *const GLvoid
-                    )
                 );
 
                 // Increment the offset

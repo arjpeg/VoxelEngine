@@ -3,7 +3,7 @@ use crate::chunk::{CHUNK_HEIGHT, CHUNK_WIDTH};
 /// Returns the index of a block given its position in the chunk.
 /// For example, (0, 10, 0) -> 10. Used for indexing into the chunk's
 /// `cubes` array.
-pub fn get_index(x: usize, y: usize, z: usize) -> usize {
+pub fn get_chunk_index(x: usize, y: usize, z: usize) -> usize {
     x + CHUNK_WIDTH * (y + CHUNK_HEIGHT * z)
 }
 

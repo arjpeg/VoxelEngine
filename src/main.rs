@@ -3,6 +3,8 @@ pub mod chunk;
 pub mod utils;
 pub mod voxel;
 
+use std::sync::OnceLock;
+
 use buffers::vbo::Vbo;
 use chunk::Chunk;
 
@@ -11,18 +13,35 @@ use nalgebra_glm as glm;
 mod rendering;
 
 use glfw::{Action, Context, Key, MouseButton, WindowEvent};
+use owo_colors::OwoColorize;
 use rendering::{
     camera::Camera, shader::shader_program::ShaderProgram, shapes::cube::CUBE_POSITIONS,
 };
 
-use crate::{buffers::vao_builder::VaoBuilder, utils::key_is_down, voxel::VoxelKind};
+use crate::{
+    buffers::vao_builder::VaoBuilder, chunk::ChunkGenerationStrategy, utils::key_is_down,
+    voxel::VoxelKind,
+};
 
 const WIDTH: u32 = 1000;
 const HEIGHT: u32 = 1000;
 
 const ASPECT_RATIO: f32 = WIDTH as f32 / HEIGHT as f32;
 
+pub static NOISE_SEED: OnceLock<u32> = OnceLock::new();
+pub static NOISE: OnceLock<noise::Perlin> = OnceLock::new();
+
 fn main() {
+    // Initialize the noise seed
+    NOISE_SEED.get_or_init(|| rand::random::<u32>());
+    NOISE.get_or_init(|| noise::Perlin::new(*NOISE_SEED.get().unwrap()));
+
+    println!(
+        "Using noise speed: {}",
+        NOISE_SEED.get().unwrap().cyan().bold()
+    );
+
+    // Initialize GLFW
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
     glfw.window_hint(glfw::WindowHint::ContextVersion(4, 1));
@@ -58,7 +77,10 @@ fn main() {
     let shader_program: ShaderProgram = Default::default();
 
     // Create a new chunk
-    let chunk = Chunk::new(glm::vec2(0.0, 0.0));
+    let mut chunk = Chunk::new((0, 0));
+    let gen_strat = ChunkGenerationStrategy::Perlin2d;
+
+    gen_strat.apply(&mut chunk);
 
     // Create transformations
     let mut camera = Camera::new(glm::vec3(0.0, 0.0, 20.0), 45.0);
@@ -116,7 +138,13 @@ fn main() {
         delta_time = time - last_frame;
         last_frame = time;
 
-        println!("FPS: {}", 1.0 / delta_time);
+        if 1.0 / delta_time < 30.0 {
+            println!(
+                "{}: FPS is very low ({})",
+                "Warning".yellow().bold(),
+                (1.0 / delta_time).green()
+            );
+        }
 
         // Update the wireframe timer
         last_wire_frame_timer += delta_time;
