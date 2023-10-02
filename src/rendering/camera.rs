@@ -1,4 +1,7 @@
+use glfw::{Key, WindowEvent};
 use nalgebra_glm as glm;
+
+use crate::utils::key_is_down;
 
 pub struct Camera {
     /// The position of the camera
@@ -67,6 +70,33 @@ impl Camera {
     /// Gets the projection matrix of the camera
     pub fn get_projection_matrix(&self, aspect_ratio: f32) -> glm::Mat4 {
         glm::perspective(aspect_ratio, self.fov.to_radians(), 0.1, 100.0)
+    }
+
+    /// Handles keyboard events
+    pub fn handle_keyboard_input(&mut self, window: &glfw::Window, speed: f32) {
+        let directions = &[
+            (
+                Key::A,
+                glm::normalize(&glm::cross(&self.front, &self.up)) * -1.0,
+            ),
+            (Key::D, glm::normalize(&glm::cross(&self.front, &self.up))),
+            (
+                Key::W,
+                glm::normalize(&glm::vec3(self.front.x, 0.0, self.front.z)),
+            ),
+            (
+                Key::S,
+                glm::normalize(&glm::vec3(self.front.x, 0.0, self.front.z)) * -1.0,
+            ),
+            (Key::Space, glm::vec3(0.0, 1.0, 0.0)),
+            (Key::LeftShift, glm::vec3(0.0, -1.0, 0.0)),
+        ];
+
+        directions.map(|(key, direction)| {
+            if key_is_down(window, key) {
+                self.move_in_dir(direction * speed);
+            }
+        });
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::voxel::{Voxel, VoxelKind};
+use crate::{chunk::Chunk, voxel::VoxelKind};
 
 /// A mesh that can be passed to the GPU.
 pub struct Mesh {
@@ -10,17 +10,14 @@ pub struct Mesh {
 
 /// A struct that builds a mesh from a set of voxels.
 pub struct MeshBuilder {
-    /// The voxels to build the mesh from.
-    voxel_data: Vec<Voxel>,
     /// The mesh that is being built.
     mesh: Mesh,
 }
 
 impl MeshBuilder {
     /// Creates a new mesh builder.
-    pub fn new(voxel_data: Vec<Voxel>) -> Self {
+    pub fn new() -> Self {
         Self {
-            voxel_data,
             mesh: Mesh {
                 vertices: Vec::new(),
                 indices: Vec::new(),
@@ -28,57 +25,33 @@ impl MeshBuilder {
         }
     }
 
-    /// Builds the mesh.
-    pub fn build_mesh(mut self) -> Mesh {
-        let position_offsets: [(i32, i32, i32); 6] = [
-            (1, 0, 0),  // Right
-            (-1, 0, 0), // Left
-            (0, 1, 0),  // Top
-            (0, -1, 0), // Bottom
-            (0, 0, 1),  // Front
-            (0, 0, -1), // Back
-        ];
+    /// Builds the mesh from a list of chunks
+    pub fn build_mesh(mut self, chunks: &Vec<Chunk>) -> Mesh {
+        // Iterate through each chunk
+        for chunk in chunks.iter() {
+            // Go through each block
+            for voxel in chunk.blocks.iter() {
+                // If the voxel is air, skip it
+                if voxel.kind == VoxelKind::Air {
+                    continue;
+                }
 
-        let voxels = self.voxel_data.clone();
-
-        // Loop through all the voxels
-        for voxel in voxels.iter() {
-            // Skip air voxels
-            if voxel.kind == VoxelKind::Air {
-                continue;
-            }
-
-            // Loop through all the faces
-            for face_offset in position_offsets {
-                let face = (
-                    voxel.position.x + face_offset.0,
-                    voxel.position.y + face_offset.1,
-                    voxel.position.z + face_offset.2,
+                // Get the position of the voxel
+                let position = (
+                    voxel.position.0 as f32,
+                    voxel.position.1 as f32,
+                    voxel.position.2 as f32,
                 );
 
-                // Check if the face is exposed
-                let exposed = self.voxel_data.iter().any(|voxel| {
-                    voxel.position.x == face.0
-                        && voxel.position.y == face.1
-                        && voxel.position.z == face.2
-                        && voxel.kind == VoxelKind::Air
-                });
+                // Get the size of the voxel
+                let size = (1.0, 1.0);
 
-                // If the face is exposed, add it to the mesh
-                if exposed {
-                    let position = (
-                        voxel.position.x as f32,
-                        voxel.position.y as f32,
-                        voxel.position.z as f32,
-                    );
-
-                    let size = (1.0, 1.0);
-
-                    self.add_quad(position, size);
-                }
+                // Add the quad to the mesh
+                self.add_quad(position, size);
             }
         }
 
+        // Return the mesh
         self.mesh
     }
 

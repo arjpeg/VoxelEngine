@@ -17,7 +17,7 @@ pub struct Chunk {
     pub position: (i32, i32),
 
     /// The cubes in the chunk.
-    pub cubes: [Voxel; CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT],
+    pub blocks: [Voxel; CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT],
 }
 
 impl Chunk {
@@ -46,7 +46,10 @@ impl Chunk {
             }
         }
 
-        Self { position, cubes }
+        Self {
+            position,
+            blocks: cubes,
+        }
     }
 }
 
@@ -70,7 +73,7 @@ impl ChunkGenerationStrategy {
         match &self {
             ChunkGenerationStrategy::Empty => {
                 // Set all voxels to air
-                for voxel in chunk.cubes.iter_mut() {
+                for voxel in chunk.blocks.iter_mut() {
                     voxel.kind = VoxelKind::Air;
                 }
             }
@@ -101,7 +104,7 @@ impl ChunkGenerationStrategy {
                 let height = (noise_value * CHUNK_HEIGHT as f32).max(1.0) as usize;
 
                 for y in 0..height {
-                    chunk.cubes[get_chunk_index(x, y, z)].kind = VoxelKind::Grass;
+                    chunk.blocks[get_chunk_index(x, y, z)].kind = VoxelKind::Grass;
                 }
             }
         }
@@ -111,7 +114,7 @@ impl ChunkGenerationStrategy {
     fn perlin_3d(&self, chunk: &mut Chunk) {
         let noise = NOISE.get().unwrap();
 
-        for voxel in chunk.cubes.iter_mut() {
+        for voxel in chunk.blocks.iter_mut() {
             let noise_value = noise.get([
                 voxel.position.0 as f64 / 16.0,
                 voxel.position.1 as f64 / 16.0,
@@ -129,7 +132,7 @@ impl ChunkGenerationStrategy {
     /// Places a flat plane of some block below a certain height.
     fn flat_plane(&self, chunk: &mut Chunk, kind: VoxelKind, height: u32) {
         for voxel in chunk
-            .cubes
+            .blocks
             .iter_mut()
             .filter(|voxel| voxel.position.1 <= height as i32)
         {

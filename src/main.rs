@@ -1,5 +1,6 @@
 mod buffers;
 pub mod chunk;
+pub mod mesh;
 pub mod utils;
 pub mod voxel;
 
@@ -178,7 +179,7 @@ fn main() {
             // Render the chunks
             for chunk in chunks.iter() {
                 for cube in chunk
-                    .cubes
+                    .blocks
                     .iter()
                     .filter(|cube| cube.kind != VoxelKind::Air)
                 {
@@ -203,39 +204,7 @@ fn main() {
         {
             let camera_speed = 10.0 * delta_time;
 
-            if key_is_down(&window, Key::W) {
-                camera.move_in_dir(
-                    glm::normalize(&glm::vec3(camera.front.x, 0.0, camera.front.z)) * camera_speed,
-                )
-            }
-
-            if key_is_down(&window, Key::S) {
-                camera.move_in_dir(
-                    glm::normalize(&glm::vec3(camera.front.x, 0.0, camera.front.z))
-                        * camera_speed
-                        * -1.0,
-                )
-            }
-
-            if key_is_down(&window, Key::A) {
-                camera.move_in_dir(
-                    glm::normalize(&glm::cross(&camera.front, &camera.up)) * camera_speed * -1.0,
-                )
-            }
-
-            if key_is_down(&window, Key::D) {
-                camera.move_in_dir(
-                    glm::normalize(&glm::cross(&camera.front, &camera.up)) * camera_speed * 1.0,
-                )
-            }
-
-            if window.get_key(Key::Space) == Action::Press {
-                camera.move_in_dir(glm::vec3(0.0, 1.0, 0.0) * camera_speed);
-            }
-
-            if window.get_key(Key::LeftShift) == Action::Press {
-                camera.move_in_dir(glm::vec3(0.0, -1.0, 0.0) * camera_speed);
-            }
+            camera.handle_keyboard_input(&window, camera_speed);
 
             for (_, event) in glfw::flush_messages(&events) {
                 match event {
