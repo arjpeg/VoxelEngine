@@ -1,7 +1,7 @@
 mod buffers;
 pub mod chunk;
 pub mod input;
-pub mod mesh;
+pub mod timer;
 pub mod utils;
 pub mod voxel;
 
@@ -22,7 +22,7 @@ use rendering::{
 
 use crate::{
     buffers::vao_builder::VaoBuilder, chunk::ChunkGenerationStrategy, input::Input,
-    rendering::camera::CAMERA_SPEED, utils::key_is_down, voxel::VoxelKind,
+    rendering::camera::CAMERA_SPEED, timer::Timer, utils::key_is_down, voxel::VoxelKind,
 };
 
 const WIDTH: u32 = 1000;
@@ -110,7 +110,6 @@ fn main() {
     let mut last_frame = 0.0f32;
 
     let mut wire_frame = false;
-    let mut last_wire_frame_timer = 0.0f32;
 
     let cube_vbo = Vbo::new(&CUBE_POSITIONS, gl::STATIC_DRAW);
     cube_vbo.bind();
@@ -121,23 +120,6 @@ fn main() {
 
     // Loop until the user closes the window
     while !window.should_close() {
-        // Check if the user wants to toggle wireframe mode
-        if key_is_down(&window, Key::F) && last_wire_frame_timer > 0.2 {
-            last_wire_frame_timer = 0.0;
-
-            if !wire_frame {
-                unsafe {
-                    gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-                }
-            } else {
-                unsafe {
-                    gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-                }
-            }
-
-            wire_frame = !wire_frame;
-        }
-
         // Swap front and back buffers
         window.swap_buffers();
 
@@ -157,9 +139,6 @@ fn main() {
                 (1.0 / delta_time).green()
             );
         }
-
-        // Update the wireframe timer
-        last_wire_frame_timer += delta_time;
 
         unsafe {
             shader_program.use_program();
@@ -207,6 +186,22 @@ fn main() {
             match event {
                 WindowEvent::Key(key, _, action, _) => {
                     input.key(key, action, &mut window);
+
+                    if let Key::F = key {
+                        if let Action::Press = action {
+                            if !wire_frame {
+                                unsafe {
+                                    gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+                                }
+                            } else {
+                                unsafe {
+                                    gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+                                }
+                            }
+
+                            wire_frame = !wire_frame;
+                        }
+                    }
                 }
                 WindowEvent::CursorPos(x, y) => {
                     input.mouse_move(x as f32, y as f32, &mut |x_offset, y_offset| {

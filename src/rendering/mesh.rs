@@ -58,7 +58,7 @@ impl MeshBuilder {
     /// Adds a quad to the mesh.
     fn add_quad(&mut self, position: (f32, f32, f32), size: (f32, f32)) {
         // Add the indices
-        let index_offset = self.mesh.vertices.len() as u32;
+        let index_offset = self.mesh.indices.len() as u32;
 
         self.mesh.indices.push(index_offset + 0);
         self.mesh.indices.push(index_offset + 1);
