@@ -1,5 +1,6 @@
 mod buffers;
 pub mod chunk;
+pub mod input;
 pub mod mesh;
 pub mod utils;
 pub mod voxel;
@@ -20,8 +21,8 @@ use rendering::{
 };
 
 use crate::{
-    buffers::vao_builder::VaoBuilder, chunk::ChunkGenerationStrategy, utils::key_is_down,
-    voxel::VoxelKind,
+    buffers::vao_builder::VaoBuilder, chunk::ChunkGenerationStrategy, input::Input,
+    rendering::camera::CAMERA_SPEED, utils::key_is_down, voxel::VoxelKind,
 };
 
 const WIDTH: u32 = 1000;
@@ -69,6 +70,12 @@ fn main() {
     // Load the OpenGL function pointers
     gl::load_with(|s| window.get_proc_address(s));
 
+    // Initalize the input capture
+    let mut input = Input {
+        last_mouse: (WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0),
+        escaped: false,
+    };
+
     // Enable depth testing
     unsafe {
         gl::Enable(gl::DEPTH_TEST);
@@ -96,12 +103,7 @@ fn main() {
 
     // Create transformations
     let mut camera = Camera::new(glm::vec3(0.0, 0.0, 20.0), 45.0);
-    let camera_sensitivity = 0.01f32;
-
     let projection_matrix = camera.get_projection_matrix(ASPECT_RATIO);
-
-    let mut last_x = WIDTH as f32 / 2.0;
-    let mut last_y = HEIGHT as f32 / 2.0;
 
     // Track delta time
     let mut delta_time;
@@ -109,8 +111,6 @@ fn main() {
 
     let mut wire_frame = false;
     let mut last_wire_frame_timer = 0.0f32;
-
-    let mut escaped = false;
 
     let cube_vbo = Vbo::new(&CUBE_POSITIONS, gl::STATIC_DRAW);
     cube_vbo.bind();
@@ -200,49 +200,27 @@ fn main() {
             }
         }
 
-        // Handle events
-        {
-            let camera_speed = 10.0 * delta_time;
+        // Handle input
+        camera.handle_keyboard_input(&window, CAMERA_SPEED * delta_time);
 
-            camera.handle_keyboard_input(&window, camera_speed);
-
-            for (_, event) in glfw::flush_messages(&events) {
-                match event {
-                    WindowEvent::Key(key, _, action, _) => match (key, action) {
-                        (Key::Q, Action::Press) => window.set_should_close(true),
-                        (Key::Escape, Action::Press) => {
-                            if !escaped {
-                                window.set_cursor_mode(glfw::CursorMode::Normal);
-                            } else {
-                                window.set_cursor_mode(glfw::CursorMode::Disabled);
-                            }
-
-                            escaped = !escaped;
-                        }
-                        _ => {}
-                    },
-                    WindowEvent::CursorPos(x, y) => {
-                        if escaped {
-                            continue;
-                        }
-
-                        let x_offset = x as f32 - last_x;
-                        let y_offset = last_y - y as f32;
-
-                        last_x = x as f32;
-                        last_y = y as f32;
-
-                        camera.rotate(x_offset * camera_sensitivity, y_offset * camera_sensitivity);
+        for (_, event) in glfw::flush_messages(&events) {
+            match event {
+                WindowEvent::Key(key, _, action, _) => {
+                    input.key(key, action, &mut window);
+                }
+                WindowEvent::CursorPos(x, y) => {
+                    input.mouse_move(x as f32, y as f32, &mut |x_offset, y_offset| {
+                        camera.rotate(x_offset, y_offset);
+                    });
+                }
+                WindowEvent::MouseButton(MouseButton::Button1, Action::Press, _) => {
+                    if !input.escaped {
+                        input.escaped = false;
+                        window.set_cursor_mode(glfw::CursorMode::Disabled);
                     }
-                    WindowEvent::MouseButton(MouseButton::Button1, Action::Press, _) => {
-                        if escaped {
-                            escaped = false;
-                            window.set_cursor_mode(glfw::CursorMode::Disabled);
-                        }
-                    }
-                    _ => {}
-                };
-            }
+                }
+                _ => {}
+            };
         }
     }
 }

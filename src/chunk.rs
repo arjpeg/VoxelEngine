@@ -1,5 +1,4 @@
 use noise::NoiseFn;
-use owo_colors::OwoColorize;
 
 use crate::{
     utils::get_chunk_index,
@@ -8,7 +7,7 @@ use crate::{
 };
 
 pub const CHUNK_WIDTH: usize = 16;
-pub const CHUNK_HEIGHT: usize = 32;
+pub const CHUNK_HEIGHT: usize = 16;
 
 /// Represents a section of the world.
 #[derive(Debug)]
@@ -27,12 +26,6 @@ impl Chunk {
             position: (0, 0, 0),
             kind: VoxelKind::Air,
         }; CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT];
-
-        println!(
-            "Creating chunk at {:?} (with size {})",
-            (position).cyan().bold(),
-            cubes.len()
-        );
 
         for x in 0..CHUNK_WIDTH {
             for z in 0..CHUNK_WIDTH {

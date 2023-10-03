@@ -1,7 +1,10 @@
-use glfw::{Key, WindowEvent};
+use glfw::Key;
 use nalgebra_glm as glm;
 
 use crate::utils::key_is_down;
+
+pub const CAMERA_SENSITIVITY: f32 = 0.007;
+pub const CAMERA_SPEED: f32 = 10.0;
 
 pub struct Camera {
     /// The position of the camera
