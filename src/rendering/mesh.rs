@@ -8,6 +8,17 @@ pub struct Mesh {
     pub indices: Vec<u32>,
 }
 
+/// The different directions that a face can be facing.
+#[derive(Clone, Copy)]
+pub enum FaceDirection {
+    Up,
+    Down,
+    Left,
+    Right,
+    Front,
+    Back,
+}
+
 /// A struct that builds a mesh from a set of voxels.
 pub struct MeshBuilder {
     /// The mesh that is being built.
@@ -46,8 +57,13 @@ impl MeshBuilder {
                 // Get the size of the voxel
                 let size = (1.0, 1.0);
 
-                // Add the quad to the mesh
-                self.add_quad(position, size);
+                // Add the all of the faces
+                self.add_quad(position, size, FaceDirection::Up);
+                self.add_quad(position, size, FaceDirection::Down);
+                self.add_quad(position, size, FaceDirection::Left);
+                self.add_quad(position, size, FaceDirection::Right);
+                self.add_quad(position, size, FaceDirection::Front);
+                self.add_quad(position, size, FaceDirection::Back);
             }
         }
 
@@ -56,7 +72,7 @@ impl MeshBuilder {
     }
 
     /// Adds a quad to the mesh.
-    fn add_quad(&mut self, position: (f32, f32, f32), size: (f32, f32)) {
+    fn add_quad(&mut self, position: (f32, f32, f32), size: (f32, f32), direction: FaceDirection) {
         // Add the indices
         let index_offset = self.mesh.indices.len() as u32;
 
@@ -69,17 +85,65 @@ impl MeshBuilder {
         self.mesh.indices.push(index_offset + 0);
 
         // Add the vertices
-        self.mesh
-            .vertices
-            .push((position.0, position.1, position.2));
-        self.mesh
-            .vertices
-            .push((position.0 + size.0, position.1, position.2));
-        self.mesh
-            .vertices
-            .push((position.0 + size.0, position.1 + size.1, position.2));
-        self.mesh
-            .vertices
-            .push((position.0, position.1 + size.1, position.2));
+        let positions = Self::get_face_verticies(position, size, direction);
+    }
+
+    /// Returns the vertices of the face of a cube based on its position, size, and
+    /// direction. All of the verticies move in a counter-clockwise direction.
+    fn get_face_verticies(
+        position: (f32, f32, f32),
+        size: (f32, f32),
+        direction: FaceDirection,
+    ) -> [(f32, f32, f32); 4] {
+        match direction {
+            FaceDirection::Up => [
+                (position.0, position.1 + size.1, position.2),
+                (position.0 + size.0, position.1 + size.1, position.2),
+                (
+                    position.0 + size.0,
+                    position.1 + size.1,
+                    position.2 + size.1,
+                ),
+                (position.0, position.1 + size.1, position.2 + size.1),
+            ],
+            FaceDirection::Down => [
+                (position.0, position.1, position.2),
+                (position.0 + size.0, position.1, position.2),
+                (position.0 + size.0, position.1, position.2 + size.1),
+                (position.0, position.1, position.2 + size.1),
+            ],
+            FaceDirection::Left => [
+                (position.0, position.1, position.2),
+                (position.0, position.1 + size.1, position.2),
+                (position.0, position.1 + size.1, position.2 + size.1),
+                (position.0, position.1, position.2 + size.1),
+            ],
+            FaceDirection::Right => [
+                (position.0 + size.0, position.1, position.2),
+                (position.0 + size.0, position.1 + size.1, position.2),
+                (
+                    position.0 + size.0,
+                    position.1 + size.1,
+                    position.2 + size.1,
+                ),
+                (position.0 + size.0, position.1, position.2 + size.1),
+            ],
+            FaceDirection::Front => [
+                (position.0, position.1, position.2 + size.1),
+                (position.0 + size.0, position.1, position.2 + size.1),
+                (
+                    position.0 + size.0,
+                    position.1 + size.1,
+                    position.2 + size.1,
+                ),
+                (position.0, position.1 + size.1, position.2 + size.1),
+            ],
+            FaceDirection::Back => [
+                (position.0, position.1, position.2),
+                (position.0 + size.0, position.1, position.2),
+                (position.0 + size.0, position.1 + size.1, position.2),
+                (position.0, position.1 + size.1, position.2),
+            ],
+        }
     }
 }
