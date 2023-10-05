@@ -1,6 +1,7 @@
-use std::mem::size_of;
+use std::{mem::size_of, process::exit};
 
 use gl::types::GLvoid;
+use owo_colors::OwoColorize;
 
 use super::vao::Vao;
 
@@ -18,6 +19,21 @@ pub struct VaoBuilder {
 impl VaoBuilder {
     /// Creates a new VAO builder.
     pub fn new() -> Self {
+        // Make sure a VBO is bound
+        debug_assert!({
+            let mut id = 0;
+            unsafe { gl::GetIntegerv(gl::ARRAY_BUFFER_BINDING, &mut id) };
+
+            if id == 0 {
+                panic!(
+                    "{}: No was bound VBO during creation of the vao",
+                    "Error".red().bold()
+                );
+            }
+
+            true
+        });
+
         Self { layers: vec![] }
     }
 

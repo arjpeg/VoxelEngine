@@ -16,13 +16,14 @@ mod rendering;
 
 use glfw::{Action, Context, Key, MouseButton, WindowEvent};
 use owo_colors::OwoColorize;
-use rendering::{
-    camera::Camera, shader::shader_program::ShaderProgram, shapes::cube::CUBE_POSITIONS,
-};
+use rendering::{camera::Camera, shader::shader_program::ShaderProgram};
 
 use crate::{
-    buffers::vao_builder::VaoBuilder, chunk::ChunkGenerationStrategy, input::Input,
-    rendering::camera::CAMERA_SPEED, timer::Timer, utils::key_is_down, voxel::VoxelKind,
+    buffers::{ibo::Ibo, vao_builder::VaoBuilder},
+    chunk::ChunkGenerationStrategy,
+    input::Input,
+    rendering::{camera::CAMERA_SPEED, mesh::MeshBuilder},
+    voxel::VoxelKind,
 };
 
 const WIDTH: u32 = 1000;
@@ -111,12 +112,33 @@ fn main() {
 
     let mut wire_frame = false;
 
-    let cube_vbo = Vbo::new(&CUBE_POSITIONS, gl::STATIC_DRAW);
-    cube_vbo.bind();
-    get_gl_error!("Cube VBO");
+    let mesh = MeshBuilder::new().build_mesh(&chunks);
+    // let mesh_vbo = Vbo::new(&mesh.vertices, gl::STATIC_DRAW);
+    // mesh_vbo.bind();
+    // get_gl_error!("Mesh VBO");
 
-    let cube_vao = VaoBuilder::new().add_layer::<(f32, f32, f32)>(3).build();
-    get_gl_error!("Cube VAO");
+    // let mesh_ibo = Ibo::new(&mesh.indices, gl::STATIC_DRAW);
+    // mesh_ibo.bind();
+    // get_gl_error!("Mesh IBO");
+
+    let verticies = [
+        -0.5f32, 0.5f32, 0.0f32, // top left
+        0.5f32, 0.5f32, 0.0f32, // top right
+        0.5f32, 0.0f32, 0.0f32, // bottom-right
+        -0.5f32, 0.0f32, 0.0f32, // bottom-left
+    ];
+
+    let vbo = Vbo::new(&verticies, gl::STATIC_DRAW);
+    vbo.bind();
+    let vao = VaoBuilder::new().add_layer::<(f32, f32, f32)>(3).build();
+    get_gl_error!("VAO");
+    let ibo = Ibo::new(
+        &[
+            0, 1, 2, // first triangle
+            2, 3, 0, // second triangle
+        ],
+        gl::STATIC_DRAW,
+    );
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -147,36 +169,36 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
             // Bind uniforms
-            shader_program.set_uniform("view", camera.get_view_matrix());
-            shader_program.set_uniform("projection", projection_matrix);
+            // shader_program.set_uniform("view", camera.get_view_matrix());
+            // shader_program.set_uniform("projection", projection_matrix);
 
-            // Bind the VAO
-            cube_vao.bind();
-
-            get_gl_error!("Uniforms");
+            // Draw the triangles
+            vao.bind();
+            ibo.bind();
+            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, std::ptr::null());
 
             // Render the chunks
-            for chunk in chunks.iter() {
-                for cube in chunk
-                    .blocks
-                    .iter()
-                    .filter(|cube| cube.kind != VoxelKind::Air)
-                {
-                    let position = cube.position;
+            // for chunk in chunks.iter() {
+            //     for cube in chunk
+            //         .blocks
+            //         .iter()
+            //         .filter(|cube| cube.kind != VoxelKind::Air)
+            //     {
+            //         let position = cube.position;
 
-                    shader_program.set_uniform(
-                        "model",
-                        glm::translate(
-                            &glm::identity(),
-                            &glm::vec3(position.0 as f32, position.1 as f32, position.2 as f32),
-                        ),
-                    );
+            //         shader_program.set_uniform(
+            //             "model",
+            //             glm::translate(
+            //                 &glm::identity(),
+            //                 &glm::vec3(position.0 as f32, position.1 as f32, position.2 as f32),
+            //             ),
+            //         );
 
-                    gl::DrawArrays(gl::TRIANGLES, 0, 36);
+            //         gl::DrawArrays(gl::TRIANGLES, 0, 36);
 
-                    get_gl_error!("DrawArrays");
-                }
-            }
+            //         get_gl_error!("DrawArrays");
+            //     }
+            // }
         }
 
         // Handle input
