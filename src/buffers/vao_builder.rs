@@ -1,4 +1,4 @@
-use std::{mem::size_of, process::exit};
+use std::mem::size_of;
 
 use gl::types::GLvoid;
 use owo_colors::OwoColorize;

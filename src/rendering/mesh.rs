@@ -1,4 +1,7 @@
-use crate::{chunk::Chunk, voxel::VoxelKind};
+use crate::{
+    chunk::{Chunk, CHUNK_HEIGHT, CHUNK_WIDTH},
+    voxel::VoxelKind,
+};
 
 /// A mesh that can be passed to the GPU.
 pub struct Mesh {
@@ -38,8 +41,18 @@ impl MeshBuilder {
 
     /// Builds the mesh from a list of chunks
     pub fn build_mesh(mut self, chunks: &Vec<Chunk>) -> Mesh {
+        let position_offsets = (-1..=1)
+            .flat_map(move |x| (-1..=1).map(move |y| (x, y)))
+            .filter(|(x, y)| *x != 0 || *y != 0);
+
         // Iterate through each chunk
         for chunk in chunks.iter() {
+            let adjacent_chunks = position_offsets
+                .clone()
+                .map(|(x, y)| (chunk.position.0 + x, chunk.position.1 + y))
+                .map(|(x, y)| chunks.iter().find(|chunk| chunk.position == (x, y)))
+                .collect::<Vec<_>>();
+
             // Go through each block
             for voxel in chunk.blocks.iter() {
                 // If the voxel is air, skip it
@@ -86,6 +99,9 @@ impl MeshBuilder {
 
         // Add the vertices
         let positions = Self::get_face_verticies(position, size, direction);
+        positions.iter().for_each(|position| {
+            self.mesh.vertices.push(*position);
+        });
     }
 
     /// Returns the vertices of the face of a cube based on its position, size, and

@@ -23,7 +23,6 @@ use crate::{
     chunk::ChunkGenerationStrategy,
     input::Input,
     rendering::{camera::CAMERA_SPEED, mesh::MeshBuilder},
-    voxel::VoxelKind,
 };
 
 const WIDTH: u32 = 1000;
@@ -113,32 +112,20 @@ fn main() {
     let mut wire_frame = false;
 
     let mesh = MeshBuilder::new().build_mesh(&chunks);
-    // let mesh_vbo = Vbo::new(&mesh.vertices, gl::STATIC_DRAW);
-    // mesh_vbo.bind();
-    // get_gl_error!("Mesh VBO");
+    let mesh_vbo = Vbo::new(&mesh.vertices, gl::STATIC_DRAW);
+    mesh_vbo.bind();
+    get_gl_error!("Mesh VBO");
 
-    // let mesh_ibo = Ibo::new(&mesh.indices, gl::STATIC_DRAW);
-    // mesh_ibo.bind();
-    // get_gl_error!("Mesh IBO");
+    println!("Mesh vertices: {:?}", &mesh.vertices[0..6]);
 
-    let verticies = [
-        -0.5f32, 0.5f32, 0.0f32, // top left
-        0.5f32, 0.5f32, 0.0f32, // top right
-        0.5f32, 0.0f32, 0.0f32, // bottom-right
-        -0.5f32, 0.0f32, 0.0f32, // bottom-left
-    ];
+    let mesh_ibo = Ibo::new(&mesh.indices, gl::STATIC_DRAW);
+    mesh_ibo.bind();
+    get_gl_error!("Mesh IBO");
 
-    let vbo = Vbo::new(&verticies, gl::STATIC_DRAW);
-    vbo.bind();
+    println!("Mesh indices: {:?}", &mesh.indices[0..12]);
+
     let vao = VaoBuilder::new().add_layer::<(f32, f32, f32)>(3).build();
     get_gl_error!("VAO");
-    let ibo = Ibo::new(
-        &[
-            0, 1, 2, // first triangle
-            2, 3, 0, // second triangle
-        ],
-        gl::STATIC_DRAW,
-    );
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -169,13 +156,19 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
             // Bind uniforms
-            // shader_program.set_uniform("view", camera.get_view_matrix());
-            // shader_program.set_uniform("projection", projection_matrix);
+            shader_program.set_uniform("view", camera.get_view_matrix());
+            shader_program.set_uniform("projection", projection_matrix);
 
             // Draw the triangles
             vao.bind();
-            ibo.bind();
-            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, std::ptr::null());
+            mesh_ibo.bind();
+
+            gl::DrawElements(
+                gl::TRIANGLES,
+                mesh.indices.len() as i32,
+                gl::UNSIGNED_INT,
+                std::ptr::null(),
+            );
 
             // Render the chunks
             // for chunk in chunks.iter() {
