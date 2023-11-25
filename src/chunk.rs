@@ -6,8 +6,8 @@ use crate::{
     NOISE,
 };
 
-pub const CHUNK_WIDTH: usize = 16;
-pub const CHUNK_HEIGHT: usize = 16;
+pub const CHUNK_WIDTH: usize = 1;
+pub const CHUNK_HEIGHT: usize = 2;
 
 /// Represents a section of the world.
 #[derive(Debug)]
@@ -34,7 +34,7 @@ impl Chunk {
                     let true_y = y as i32;
                     let true_z = z as i32 + position.1 * CHUNK_WIDTH as i32;
 
-                    cubes[get_chunk_index(x, y, z)].position = (true_x, true_y, true_z);
+                    cubes[get_chunk_index((x, y, z))].position = (true_x, true_y, true_z);
                 }
             }
         }
@@ -48,7 +48,7 @@ impl Chunk {
 
 /// Different strategies for generating chunks.
 #[derive(Debug)]
-pub enum ChunkGenerationStrategy {
+pub enum ChunkGenStrategy {
     /// Generates a chunk with all air.
     Empty,
     /// Performs a perlin noise generation for the height of the chunk.
@@ -59,24 +59,24 @@ pub enum ChunkGenerationStrategy {
     FlatPlane(VoxelKind, u32),
 }
 
-impl ChunkGenerationStrategy {
+impl ChunkGenStrategy {
     /// Populates a chunk with the given strategy.
     /// Takes in the coordinates of the chunk, and the chunk itself.
     pub fn apply(&self, chunk: &mut Chunk) {
         match &self {
-            ChunkGenerationStrategy::Empty => {
+            ChunkGenStrategy::Empty => {
                 // Set all voxels to air
                 for voxel in chunk.blocks.iter_mut() {
                     voxel.kind = VoxelKind::Air;
                 }
             }
-            ChunkGenerationStrategy::Perlin2d => {
+            ChunkGenStrategy::Perlin2d => {
                 self.perlin_2d(chunk);
             }
-            ChunkGenerationStrategy::Perlin3d => {
+            ChunkGenStrategy::Perlin3d => {
                 self.perlin_3d(chunk);
             }
-            ChunkGenerationStrategy::FlatPlane(kind, height) => {
+            ChunkGenStrategy::FlatPlane(kind, height) => {
                 self.flat_plane(chunk, *kind, *height);
             }
         }
@@ -97,7 +97,7 @@ impl ChunkGenerationStrategy {
                 let height = (noise_value * CHUNK_HEIGHT as f32).max(1.0) as usize;
 
                 for y in 0..height {
-                    chunk.blocks[get_chunk_index(x, y, z)].kind = VoxelKind::Grass;
+                    chunk.blocks[get_chunk_index((x, y, z))].kind = VoxelKind::Grass;
                 }
             }
         }

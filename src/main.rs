@@ -20,9 +20,10 @@ use rendering::{camera::Camera, shader::shader_program::ShaderProgram};
 
 use crate::{
     buffers::{ibo::Ibo, vao_builder::VaoBuilder},
-    chunk::ChunkGenerationStrategy,
+    chunk::ChunkGenStrategy,
     input::Input,
     rendering::{camera::CAMERA_SPEED, mesh::MeshBuilder},
+    voxel::VoxelKind,
 };
 
 const WIDTH: u32 = 1000;
@@ -87,19 +88,20 @@ fn main() {
     // Create new chunks
     let chunks = {
         let mut chunks = Vec::new();
-        let gen_strat = ChunkGenerationStrategy::Perlin2d;
+        let gen_strat = ChunkGenStrategy::FlatPlane(VoxelKind::Grass, 1);
 
-        for x in -2..2 {
-            for z in -2..2 {
+        for x in 0..1 {
+            for z in 0..1 {
                 let mut chunk = Chunk::new((x, z));
                 gen_strat.apply(&mut chunk);
-
                 chunks.push(chunk);
             }
         }
 
         chunks
     };
+
+    println!("Chunks: {:?}", &chunks[0].blocks);
 
     // Create transformations
     let mut camera = Camera::new(glm::vec3(0.0, 0.0, 20.0), 45.0);
@@ -116,13 +118,15 @@ fn main() {
     mesh_vbo.bind();
     get_gl_error!("Mesh VBO");
 
-    println!("Mesh vertices: {:?}", &mesh.vertices[0..6]);
+    println!("Mesh verts: {:#?}", &mesh.vertices);
 
     let mesh_ibo = Ibo::new(&mesh.indices, gl::STATIC_DRAW);
+    assert!(mesh.indices.len() % 6 == 0);
     mesh_ibo.bind();
     get_gl_error!("Mesh IBO");
 
-    println!("Mesh indices: {:?}", &mesh.indices[0..12]);
+    println!("Mesh indices: {:?}", &mesh.indices);
+    // println!("Mesh tris: {}", mesh.indices.len() / 3);
 
     let vao = VaoBuilder::new().add_layer::<(f32, f32, f32)>(3).build();
     get_gl_error!("VAO");
@@ -169,33 +173,12 @@ fn main() {
                 gl::UNSIGNED_INT,
                 std::ptr::null(),
             );
-
-            // Render the chunks
-            // for chunk in chunks.iter() {
-            //     for cube in chunk
-            //         .blocks
-            //         .iter()
-            //         .filter(|cube| cube.kind != VoxelKind::Air)
-            //     {
-            //         let position = cube.position;
-
-            //         shader_program.set_uniform(
-            //             "model",
-            //             glm::translate(
-            //                 &glm::identity(),
-            //                 &glm::vec3(position.0 as f32, position.1 as f32, position.2 as f32),
-            //             ),
-            //         );
-
-            //         gl::DrawArrays(gl::TRIANGLES, 0, 36);
-
-            //         get_gl_error!("DrawArrays");
-            //     }
-            // }
         }
 
         // Handle input
-        camera.handle_keyboard_input(&window, CAMERA_SPEED * delta_time);
+        if !input.escaped {
+            camera.handle_keyboard_input(&window, CAMERA_SPEED * delta_time);
+        }
 
         for (_, event) in glfw::flush_messages(&events) {
             match event {

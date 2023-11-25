@@ -1,12 +1,17 @@
-use crate::{
-    chunk::{Chunk, CHUNK_HEIGHT, CHUNK_WIDTH},
-    voxel::VoxelKind,
-};
+use crate::{chunk::Chunk, utils::world_to_chunk_coordinate, voxel::VoxelKind};
+
+/// A vertex that can be passed to the GPU.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct Vertex {
+    /// The position of the vertex.
+    pub position: (f32, f32, f32),
+}
 
 /// A mesh that can be passed to the GPU.
 pub struct Mesh {
     /// The vertices of the mesh.
-    pub vertices: Vec<(f32, f32, f32)>,
+    pub vertices: Vec<Vertex>,
     /// The indices of the mesh.
     pub indices: Vec<u32>,
 }
@@ -61,22 +66,23 @@ impl MeshBuilder {
                 }
 
                 // Get the position of the voxel
-                let position = (
-                    voxel.position.0 as f32,
-                    voxel.position.1 as f32,
-                    voxel.position.2 as f32,
-                );
-
-                // Get the size of the voxel
-                let size = (1.0, 1.0);
+                let (x, y, z) = voxel.position;
+                let (cx, cy, cz) = world_to_chunk_coordinate(x, y, z);
+                // println!("chunk coords: {cx}, {cy}, {cz}");
 
                 // Add the all of the faces
-                self.add_quad(position, size, FaceDirection::Up);
-                self.add_quad(position, size, FaceDirection::Down);
-                self.add_quad(position, size, FaceDirection::Left);
-                self.add_quad(position, size, FaceDirection::Right);
-                self.add_quad(position, size, FaceDirection::Front);
-                self.add_quad(position, size, FaceDirection::Back);
+                // if cy < CHUNK_HEIGHT
+                //     && chunk.blocks[get_chunk_index((cx, cy + 1, cz))].kind == VoxelKind::Air
+                // {
+                //     self.add_quad(position, size, FaceDirection::Up);
+                // }
+
+                // self.add_quad(position, size, FaceDirection::Up);
+                // self.add_quad(position, size, FaceDirection::Down);
+                self.add_quad(voxel.position, FaceDirection::Front);
+                // self.add_quad(position, size, FaceDirection::Right);
+                // self.add_quad(position, size, FaceDirection::Front);
+                // self.add_quad(position, size, FaceDirection::Back);
             }
         }
 
@@ -85,7 +91,7 @@ impl MeshBuilder {
     }
 
     /// Adds a quad to the mesh.
-    fn add_quad(&mut self, position: (f32, f32, f32), size: (f32, f32), direction: FaceDirection) {
+    fn add_quad(&mut self, position: (i32, i32, i32), direction: FaceDirection) {
         // Add the indices
         let index_offset = self.mesh.indices.len() as u32;
 
@@ -98,67 +104,59 @@ impl MeshBuilder {
         self.mesh.indices.push(index_offset + 0);
 
         // Add the vertices
-        let positions = Self::get_face_verticies(position, size, direction);
+        let positions = Self::get_face_verticies(position, direction);
         positions.iter().for_each(|position| {
-            self.mesh.vertices.push(*position);
+            self.mesh.vertices.push(Vertex {
+                position: (position.0 as f32, position.1 as f32, position.2 as f32),
+            });
         });
     }
 
     /// Returns the vertices of the face of a cube based on its position, size, and
     /// direction. All of the verticies move in a counter-clockwise direction.
+    #[rustfmt::skip]
     fn get_face_verticies(
-        position: (f32, f32, f32),
-        size: (f32, f32),
+        position: (i32, i32, i32),
         direction: FaceDirection,
-    ) -> [(f32, f32, f32); 4] {
+    ) -> [(i32, i32, i32); 4] {
+        let (x, y, z) = position;
+
         match direction {
             FaceDirection::Up => [
-                (position.0, position.1 + size.1, position.2),
-                (position.0 + size.0, position.1 + size.1, position.2),
-                (
-                    position.0 + size.0,
-                    position.1 + size.1,
-                    position.2 + size.1,
-                ),
-                (position.0, position.1 + size.1, position.2 + size.1),
+                (position.0, position.1 + 1, position.2),
+                (position.0 + 1, position.1 + 1, position.2),
+                (position.0 + 1, position.1 + 1, position.2 + 1),
+                (position.0, position.1 + 1, position.2 + 1),
             ],
             FaceDirection::Down => [
-                (position.0, position.1, position.2),
-                (position.0 + size.0, position.1, position.2),
-                (position.0 + size.0, position.1, position.2 + size.1),
-                (position.0, position.1, position.2 + size.1),
+                (x, y, z),
+                (x + 1, y, x),
+                (x + 1, y, z + 1),
+                (x, y, z + 1),
             ],
             FaceDirection::Left => [
                 (position.0, position.1, position.2),
-                (position.0, position.1 + size.1, position.2),
-                (position.0, position.1 + size.1, position.2 + size.1),
-                (position.0, position.1, position.2 + size.1),
+                (position.0, position.1 + 1, position.2),
+                (position.0, position.1 + 1, position.2 + 1),
+                (position.0, position.1, position.2 + 1),
             ],
             FaceDirection::Right => [
-                (position.0 + size.0, position.1, position.2),
-                (position.0 + size.0, position.1 + size.1, position.2),
-                (
-                    position.0 + size.0,
-                    position.1 + size.1,
-                    position.2 + size.1,
-                ),
-                (position.0 + size.0, position.1, position.2 + size.1),
+                (position.0 + 1, position.1, position.2),
+                (position.0 + 1, position.1 + 1, position.2),
+                (position.0 + 1, position.1 + 1, position.2 + 1),
+                (position.0 + 1, position.1, position.2 + 1),
             ],
             FaceDirection::Front => [
-                (position.0, position.1, position.2 + size.1),
-                (position.0 + size.0, position.1, position.2 + size.1),
-                (
-                    position.0 + size.0,
-                    position.1 + size.1,
-                    position.2 + size.1,
-                ),
-                (position.0, position.1 + size.1, position.2 + size.1),
+                (x,   y+1, z),
+                (x,   y,   z),
+                (x+1, y,   z),
+                (x+1, y+1, z),
             ],
             FaceDirection::Back => [
                 (position.0, position.1, position.2),
-                (position.0 + size.0, position.1, position.2),
-                (position.0 + size.0, position.1 + size.1, position.2),
-                (position.0, position.1 + size.1, position.2),
+                (position.0 + 1, position.1, position.2),
+                (position.0 + 1, position.1 + 1, position.2),
+                (position.0, position.1 + 1, position.2),
             ],
         }
     }

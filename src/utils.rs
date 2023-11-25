@@ -3,8 +3,21 @@ use crate::chunk::{CHUNK_HEIGHT, CHUNK_WIDTH};
 /// Returns the index of a block given its position in the chunk.
 /// For example, (0, 10, 0) -> 10. Used for indexing into the chunk's
 /// `cubes` array.
-pub fn get_chunk_index(x: usize, y: usize, z: usize) -> usize {
+pub fn get_chunk_index(chunk_coord: (usize, usize, usize)) -> usize {
+    let (x, y, z) = chunk_coord;
+
     x + CHUNK_WIDTH * (y + CHUNK_HEIGHT * z)
+}
+
+/// Return the chunk position of a block given its position in the world.
+/// For example, (17, 0, 0) -> (1, 0, 0). Used for indexing into the
+/// `chunks` array.
+pub fn world_to_chunk_coordinate(x: i32, y: i32, z: i32) -> (usize, usize, usize) {
+    (
+        x.rem_euclid(CHUNK_WIDTH as i32) as usize,
+        y.rem_euclid(CHUNK_HEIGHT as i32) as usize,
+        z.rem_euclid(CHUNK_WIDTH as i32) as usize,
+    )
 }
 
 /// Returns true if the key is down.
