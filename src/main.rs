@@ -88,7 +88,7 @@ fn main() {
     // Create new chunks
     let chunks = {
         let mut chunks = Vec::new();
-        let gen_strat = ChunkGenStrategy::FlatPlane(VoxelKind::Grass, 1);
+        let gen_strat = ChunkGenStrategy::FlatPlane(VoxelKind::Grass, 3);
 
         for x in 0..1 {
             for z in 0..1 {
@@ -100,8 +100,6 @@ fn main() {
 
         chunks
     };
-
-    println!("Chunks: {:?}", &chunks[0].blocks);
 
     // Create transformations
     let mut camera = Camera::new(glm::vec3(0.0, 0.0, 20.0), 45.0);
@@ -118,15 +116,12 @@ fn main() {
     mesh_vbo.bind();
     get_gl_error!("Mesh VBO");
 
-    println!("Mesh verts: {:#?}", &mesh.vertices);
-
     let mesh_ibo = Ibo::new(&mesh.indices, gl::STATIC_DRAW);
     assert!(mesh.indices.len() % 6 == 0);
     mesh_ibo.bind();
     get_gl_error!("Mesh IBO");
 
-    println!("Mesh indices: {:?}", &mesh.indices);
-    // println!("Mesh tris: {}", mesh.indices.len() / 3);
+    println!("Mesh tris: {}", (mesh.indices.len() / 3).green().bold());
 
     let vao = VaoBuilder::new().add_layer::<(f32, f32, f32)>(3).build();
     get_gl_error!("VAO");

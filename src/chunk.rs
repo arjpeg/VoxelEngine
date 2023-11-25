@@ -6,8 +6,8 @@ use crate::{
     NOISE,
 };
 
-pub const CHUNK_WIDTH: usize = 1;
-pub const CHUNK_HEIGHT: usize = 2;
+pub const CHUNK_WIDTH: usize = 16;
+pub const CHUNK_HEIGHT: usize = 16;
 
 /// Represents a section of the world.
 #[derive(Debug)]
