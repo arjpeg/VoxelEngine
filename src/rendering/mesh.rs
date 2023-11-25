@@ -77,12 +77,12 @@ impl MeshBuilder {
                 //     self.add_quad(position, size, FaceDirection::Up);
                 // }
 
-                // self.add_quad(position, size, FaceDirection::Up);
-                // self.add_quad(position, size, FaceDirection::Down);
+                self.add_quad(voxel.position, FaceDirection::Up);
+                self.add_quad(voxel.position, FaceDirection::Down);
+                self.add_quad(voxel.position, FaceDirection::Left);
+                self.add_quad(voxel.position, FaceDirection::Right);
                 self.add_quad(voxel.position, FaceDirection::Front);
-                // self.add_quad(position, size, FaceDirection::Right);
-                // self.add_quad(position, size, FaceDirection::Front);
-                // self.add_quad(position, size, FaceDirection::Back);
+                self.add_quad(voxel.position, FaceDirection::Back);
             }
         }
 
@@ -126,28 +126,28 @@ impl MeshBuilder {
 
         match direction {
             FaceDirection::Up => [
-                (position.0, position.1 + 1, position.2),
-                (position.0 + 1, position.1 + 1, position.2),
-                (position.0 + 1, position.1 + 1, position.2 + 1),
-                (position.0, position.1 + 1, position.2 + 1),
+                (x,     y + 1, z + 1),
+                (x,     y + 1, z),
+                (x + 1, y + 1, z),
+                (x + 1, y + 1, z + 1),
             ],
             FaceDirection::Down => [
-                (x, y, z),
-                (x + 1, y, x),
+                (x,     y, z + 1),
+                (x,     y, z),
+                (x + 1, y, z),
                 (x + 1, y, z + 1),
-                (x, y, z + 1),
             ],
             FaceDirection::Left => [
-                (position.0, position.1, position.2),
-                (position.0, position.1 + 1, position.2),
-                (position.0, position.1 + 1, position.2 + 1),
-                (position.0, position.1, position.2 + 1),
+                (x, y + 1, z + 1),
+                (x, y,     z + 1),
+                (x, y,     z),
+                (x, y + 1, z),
             ],
             FaceDirection::Right => [
-                (position.0 + 1, position.1, position.2),
-                (position.0 + 1, position.1 + 1, position.2),
-                (position.0 + 1, position.1 + 1, position.2 + 1),
-                (position.0 + 1, position.1, position.2 + 1),
+                (x + 1, y + 1, z + 1),
+                (x + 1, y,     z + 1),
+                (x + 1, y,     z),
+                (x + 1, y + 1, z),
             ],
             FaceDirection::Front => [
                 (x,   y+1, z),
@@ -156,10 +156,10 @@ impl MeshBuilder {
                 (x+1, y+1, z),
             ],
             FaceDirection::Back => [
-                (position.0, position.1, position.2),
-                (position.0 + 1, position.1, position.2),
-                (position.0 + 1, position.1 + 1, position.2),
-                (position.0, position.1 + 1, position.2),
+                (x,   y+1, z + 1),
+                (x,   y,   z + 1),
+                (x+1, y,   z + 1),
+                (x+1, y+1, z + 1),
             ],
         }
     }
