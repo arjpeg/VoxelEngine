@@ -95,9 +95,15 @@ impl Camera {
             (Key::LeftShift, glm::vec3(0.0, -1.0, 0.0)),
         ];
 
+        let speed_multiplier = if key_is_down(window, Key::LeftControl) {
+            5.0
+        } else {
+            1.0
+        };
+
         directions.map(|(key, direction)| {
             if key_is_down(window, key) {
-                self.move_in_dir(direction * speed);
+                self.move_in_dir(direction * speed * speed_multiplier);
             }
         });
     }

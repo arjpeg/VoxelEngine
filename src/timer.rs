@@ -1,4 +1,7 @@
+#![allow(dead_code)]
+
 /// Represents a tickable timer.
+#[derive(Debug)]
 pub struct Timer {
     /// The cooldown of the timer.
     pub cooldown: f32,

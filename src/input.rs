@@ -9,16 +9,6 @@ pub struct Input {
 }
 
 impl Input {
-    /// Sets the last mouse position.
-    pub fn set_last_mouse(&mut self, x: f32, y: f32) {
-        self.last_mouse = (x, y);
-    }
-
-    /// Returns the last mouse position.
-    pub fn last_mouse(&self) -> (f32, f32) {
-        self.last_mouse
-    }
-
     /// Handles mouse input.
     pub fn mouse_move(&mut self, x: f32, y: f32, callback: &mut dyn FnMut(f32, f32)) {
         if self.escaped {
