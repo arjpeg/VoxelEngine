@@ -1,20 +1,19 @@
 mod buffers;
-pub mod chunk;
-pub mod input;
-pub mod timer;
-pub mod utils;
-pub mod voxel;
+mod chunk;
+mod input;
+mod rendering;
+mod timer;
+mod utils;
+mod voxel;
 
 use std::sync::OnceLock;
 
 use buffers::vbo::Vbo;
 use chunk::Chunk;
 
+use glfw::{Action, Context, Key, MouseButton, WindowEvent};
 use nalgebra_glm as glm;
 
-mod rendering;
-
-use glfw::{Action, Context, Key, MouseButton, WindowEvent};
 use owo_colors::OwoColorize;
 use rendering::{camera::Camera, shader::shader_program::ShaderProgram};
 
@@ -45,7 +44,7 @@ fn main() {
     );
 
     // Initialize GLFW
-    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+    let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
 
     glfw.window_hint(glfw::WindowHint::ContextVersion(4, 1));
     glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
@@ -88,10 +87,11 @@ fn main() {
     // Create new chunks
     let chunks = {
         let mut chunks = Vec::new();
-        let gen_strat = ChunkGenStrategy::FlatPlane(VoxelKind::Grass, 3);
+        let gen_strat = ChunkGenStrategy::FlatPlane(VoxelKind::Grass, 4);
+        // let gen_strat = ChunkGenStrategy::Perlin3d;
 
-        for x in 0..1 {
-            for z in 0..1 {
+        for x in -1..1 {
+            for z in -1..1 {
                 let mut chunk = Chunk::new((x, z));
                 gen_strat.apply(&mut chunk);
                 chunks.push(chunk);

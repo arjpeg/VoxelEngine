@@ -1,6 +1,7 @@
 use noise::NoiseFn;
 
 use crate::{
+    rendering::mesh::Mesh,
     utils::get_chunk_index,
     voxel::{Voxel, VoxelKind},
     NOISE,
@@ -17,6 +18,9 @@ pub struct Chunk {
 
     /// The cubes in the chunk.
     pub blocks: [Voxel; CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT],
+
+    /// The mesh of the chunk.
+    pub mesh: Option<Mesh>,
 }
 
 impl Chunk {
@@ -42,12 +46,14 @@ impl Chunk {
         Self {
             position,
             blocks: cubes,
+            mesh: None,
         }
     }
 }
 
 /// Different strategies for generating chunks.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum ChunkGenStrategy {
     /// Generates a chunk with all air.
     Empty,
