@@ -1,7 +1,7 @@
 use crate::{
     chunk::Chunk,
-    utils::{get_chunk_index, world_to_chunk_coordinate},
-    voxel::{Voxel, VoxelKind},
+    utils::{get_chunk_index, world_to_chunk_coordinate, world_to_chunk_position},
+    voxel::VoxelKind,
 };
 
 /// A vertex that can be passed to the GPU.
@@ -71,15 +71,15 @@ impl MeshBuilder {
 
         // Iterate through each chunk
         for chunk in chunks.iter() {
-            // let adjacent_chunks = position_offsets
-            //     .clone()
-            //     .map(|(x, y)| (chunk.position.0 + x, chunk.position.1 + y))
-            //     .map(|(x, y)| chunks.iter().find(|chunk| chunk.position == (x, y)))
-            //     .collect::<Vec<_>>();
+            let adjacent_chunks = position_offsets
+                .clone()
+                .map(|(x, y)| (chunk.position.0 + x, chunk.position.1 + y))
+                .map(|(x, y)| chunks.iter().find(|chunk| chunk.position == (x, y)))
+                .collect::<Vec<_>>();
             println!("Building chunk: {:?}", chunk.position);
 
             // Go through each block
-            self.build_chunk_mesh(chunk);
+            self.build_chunk_mesh(chunk, &adjacent_chunks);
         }
 
         // Return the mesh
@@ -87,7 +87,7 @@ impl MeshBuilder {
     }
 
     /// Builds the mesh for a single chunk.
-    pub fn build_chunk_mesh(&mut self, chunk: &Chunk) {
+    pub fn build_chunk_mesh(&mut self, chunk: &Chunk, adjacent_chunks: &Vec<Option<&Chunk>>) {
         // Go through each block
         for voxel in chunk.blocks.iter() {
             // If the voxel is air, skip it
@@ -95,12 +95,9 @@ impl MeshBuilder {
                 continue;
             }
 
-            // Get the position of the voxel
-            let (x, y, z) = voxel.position;
-
             // Add all faces that are not adjacent to another voxel
             for direction in FaceDirection::all().iter() {
-                self.add_quad_if_not_adjacent(voxel.position, *direction, chunk);
+                self.add_quad_if_not_adjacent(voxel.position, *direction, chunk, adjacent_chunks);
             }
         }
     }
@@ -112,8 +109,9 @@ impl MeshBuilder {
         position: (i32, i32, i32),
         direction: FaceDirection,
         chunk: &Chunk,
+        adjacent_chunks: &Vec<Option<&Chunk>>,
     ) {
-        if !self.is_adjacent(position, direction, chunk) {
+        if !self.is_adjacent(position, direction, chunk, adjacent_chunks) {
             self.add_quad(position, direction);
         }
     }
@@ -124,6 +122,7 @@ impl MeshBuilder {
         position: (i32, i32, i32),
         direction: FaceDirection,
         chunk: &Chunk,
+        adjacent_chunks: &Vec<Option<&Chunk>>,
     ) -> bool {
         let (x, y, z) = position;
 
@@ -136,7 +135,24 @@ impl MeshBuilder {
             FaceDirection::Back => (x, y, z + 1),
         };
 
+        let this_chunk = world_to_chunk_position(x, z);
+        let other_chunk = world_to_chunk_position(bx, bz);
+
         let chunk_coords = world_to_chunk_coordinate(bx, by, bz);
+
+        let chunk = if this_chunk == other_chunk {
+            chunk
+        } else {
+            match adjacent_chunks
+                .iter()
+                .find(|chunk| matches!(chunk, Some(chunk) if chunk.position == this_chunk))
+                .map(|chunk| *chunk)
+                .flatten()
+            {
+                Some(chunk) => chunk,
+                None => return false,
+            }
+        };
 
         // Check if the block exists
         chunk.blocks[get_chunk_index(chunk_coords)].kind != VoxelKind::Air

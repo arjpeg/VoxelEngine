@@ -22,11 +22,10 @@ use crate::{
     chunk::ChunkGenStrategy,
     input::Input,
     rendering::{camera::CAMERA_SPEED, mesh::MeshBuilder},
-    voxel::VoxelKind,
 };
 
-const WIDTH: u32 = 1000;
-const HEIGHT: u32 = 1000;
+const WIDTH: u32 = 1200;
+const HEIGHT: u32 = 1200;
 
 const ASPECT_RATIO: f32 = WIDTH as f32 / HEIGHT as f32;
 
@@ -87,8 +86,8 @@ fn main() {
     // Create new chunks
     let chunks = {
         let mut chunks = Vec::new();
-        let gen_strat = ChunkGenStrategy::FlatPlane(VoxelKind::Grass, 4);
-        // let gen_strat = ChunkGenStrategy::Perlin3d;
+        // let gen_strat = ChunkGenStrategy::FlatPlane(VoxelKind::Grass, 2);
+        let gen_strat = ChunkGenStrategy::Perlin3d;
 
         for x in -1..1 {
             for z in -1..1 {

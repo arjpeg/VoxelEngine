@@ -9,6 +9,15 @@ pub fn get_chunk_index(chunk_coord: (usize, usize, usize)) -> usize {
     x + CHUNK_WIDTH * (y + CHUNK_HEIGHT * z)
 }
 
+/// Returns the coordinate of a chunk, given a block's position in the world.
+/// For example, (17, 0, 0) -> (1, 0).
+pub fn world_to_chunk_position(x: i32, z: i32) -> (i32, i32) {
+    (
+        x.div_euclid(CHUNK_WIDTH as i32),
+        z.div_euclid(CHUNK_WIDTH as i32),
+    )
+}
+
 /// Return the chunk position of a block given its position in the world.
 /// For example, (17, 0, 0) -> (1, 0, 0). Used for indexing into the
 /// `chunks` array.
