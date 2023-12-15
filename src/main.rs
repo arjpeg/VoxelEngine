@@ -1,4 +1,3 @@
-mod app;
 mod buffers;
 mod chunk;
 mod input;
@@ -21,7 +20,7 @@ use rendering::{camera::Camera, shader::shader_program::ShaderProgram};
 use crate::{
     buffers::{ibo::Ibo, vao_builder::VaoBuilder},
     chunk::ChunkGenStrategy,
-    input::Input,
+    input::InputManager,
     rendering::{camera::CAMERA_SPEED, mesh::MeshBuilder},
 };
 
@@ -71,12 +70,11 @@ fn main() {
     gl::load_with(|s| window.get_proc_address(s));
 
     // Initalize the input capture
-    let mut input = Input {
+    let mut input = InputManager {
         last_mouse: (WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0),
         escaped: false,
     };
 
-    // Enable depth testing
     unsafe {
         gl::Enable(gl::DEPTH_TEST);
     }
@@ -87,11 +85,11 @@ fn main() {
     // Create new chunks
     let chunks = {
         let mut chunks = Vec::new();
-        // let gen_strat = ChunkGenStrategy::FlatPlane(VoxelKind::Grass, 2);
+        // let gen_strat = ChunkGenStrategy::FlatPlane(voxel::VoxelKind::Grass, 1);
         let gen_strat = ChunkGenStrategy::Perlin3d;
 
-        for x in -1..1 {
-            for z in -1..1 {
+        for x in -10..10 {
+            for z in -10..10 {
                 let mut chunk = Chunk::new((x, z));
                 gen_strat.apply(&mut chunk);
                 chunks.push(chunk);
@@ -120,8 +118,6 @@ fn main() {
     assert!(mesh.indices.len() % 6 == 0);
     mesh_ibo.bind();
     get_gl_error!("Mesh IBO");
-
-    println!("Mesh tris: {}", (mesh.indices.len() / 3).green().bold());
 
     let vao = VaoBuilder::new().add_layer::<(f32, f32, f32)>(3).build();
     get_gl_error!("VAO");

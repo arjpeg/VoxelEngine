@@ -1,3 +1,5 @@
+use owo_colors::OwoColorize;
+
 use crate::{
     chunk::Chunk,
     utils::{get_chunk_index, world_to_chunk_coordinate, world_to_chunk_position},
@@ -82,14 +84,13 @@ impl MeshBuilder {
             self.build_chunk_mesh(chunk, &adjacent_chunks);
         }
 
-        // Return the mesh
         self.mesh
     }
 
     /// Builds the mesh for a single chunk.
     pub fn build_chunk_mesh(&mut self, chunk: &Chunk, adjacent_chunks: &Vec<Option<&Chunk>>) {
         // Go through each block
-        for voxel in chunk.blocks.iter() {
+        for (_, voxel) in chunk.blocks.iter() {
             // If the voxel is air, skip it
             if voxel.kind == VoxelKind::Air {
                 continue;
@@ -155,14 +156,14 @@ impl MeshBuilder {
         };
 
         // Check if the block exists
-        chunk.blocks[get_chunk_index(chunk_coords)].kind != VoxelKind::Air
+        chunk.blocks[&chunk_coords].kind != VoxelKind::Air
     }
 
     /// Adds a quad to the mesh.
     fn add_quad(&mut self, position: (i32, i32, i32), direction: FaceDirection) {
         // Add the indices
-        let index_offset = match self.mesh.indices.iter().max() {
-            Some(max) => max + 1,
+        let index_offset = match self.mesh.indices.last() {
+            Some(last) => *last + 4,
             None => 0,
         };
 
@@ -175,12 +176,13 @@ impl MeshBuilder {
         self.mesh.indices.push(index_offset + 0);
 
         // Add the vertices
-        let positions = Self::get_face_verticies(position, direction);
-        positions.iter().for_each(|position| {
-            self.mesh.vertices.push(Vertex {
-                position: (position.0 as f32, position.1 as f32, position.2 as f32),
+        Self::get_face_verticies(position, direction)
+            .iter()
+            .for_each(|position| {
+                self.mesh.vertices.push(Vertex {
+                    position: (position.0 as f32, position.1 as f32, position.2 as f32),
+                });
             });
-        });
     }
 
     /// Returns the vertices of the face of a cube based on its position, size, and

@@ -3,7 +3,7 @@ use image::{io::Reader as ImageReader, GenericImageView};
 use gl::types::{GLuint, GLvoid};
 
 #[allow(dead_code)]
-pub struct Image {
+pub struct Texture {
     /// The OpenGL texture ID
     pub id: GLuint,
 
@@ -19,7 +19,7 @@ pub struct Image {
 }
 
 #[allow(dead_code)]
-impl Image {
+impl Texture {
     pub fn new(filename: &'static str) -> Self {
         let mut img = ImageReader::open(filename)
             .unwrap_or_else(|_| panic!("Failed to open image file '{}'", filename))
@@ -103,7 +103,7 @@ impl Image {
     }
 }
 
-impl Drop for Image {
+impl Drop for Texture {
     fn drop(&mut self) {
         unsafe {
             // Delete the OpenGL texture

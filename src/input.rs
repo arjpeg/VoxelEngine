@@ -1,14 +1,14 @@
 use crate::rendering::camera::CAMERA_SENSITIVITY;
 
 /// A struct that manages the input of the game.
-pub struct Input {
+pub struct InputManager {
     /// The last position of the mouse.
     pub last_mouse: (f32, f32),
     /// Whether the mouse is captured.
     pub escaped: bool,
 }
 
-impl Input {
+impl InputManager {
     /// Handles mouse input.
     pub fn mouse_move(&mut self, x: f32, y: f32, callback: &mut dyn FnMut(f32, f32)) {
         if self.escaped {
