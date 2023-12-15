@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::chunk::{CHUNK_HEIGHT, CHUNK_WIDTH};
 
 /// Returns the index of a block given its position in the chunk.

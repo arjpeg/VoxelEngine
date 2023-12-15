@@ -1,8 +1,6 @@
-use owo_colors::OwoColorize;
-
 use crate::{
     chunk::Chunk,
-    utils::{get_chunk_index, world_to_chunk_coordinate, world_to_chunk_position},
+    utils::{world_to_chunk_coordinate, world_to_chunk_position},
     voxel::VoxelKind,
 };
 
@@ -66,7 +64,7 @@ impl MeshBuilder {
     }
 
     /// Builds the mesh from a list of chunks
-    pub fn build_mesh(mut self, chunks: &Vec<Chunk>) -> Mesh {
+    pub fn build_mesh(mut self, chunks: &[Chunk]) -> Mesh {
         let position_offsets = (-1..=1)
             .flat_map(move |x| (-1..=1).map(move |y| (x, y)))
             .filter(|(x, y)| *x != 0 || *y != 0);
@@ -88,7 +86,7 @@ impl MeshBuilder {
     }
 
     /// Builds the mesh for a single chunk.
-    pub fn build_chunk_mesh(&mut self, chunk: &Chunk, adjacent_chunks: &Vec<Option<&Chunk>>) {
+    pub fn build_chunk_mesh(&mut self, chunk: &Chunk, adjacent_chunks: &[Option<&Chunk>]) {
         // Go through each block
         for (_, voxel) in chunk.blocks.iter() {
             // If the voxel is air, skip it
@@ -110,7 +108,7 @@ impl MeshBuilder {
         position: (i32, i32, i32),
         direction: FaceDirection,
         chunk: &Chunk,
-        adjacent_chunks: &Vec<Option<&Chunk>>,
+        adjacent_chunks: &[Option<&Chunk>],
     ) {
         if !self.is_adjacent(position, direction, chunk, adjacent_chunks) {
             self.add_quad(position, direction);
@@ -123,7 +121,7 @@ impl MeshBuilder {
         position: (i32, i32, i32),
         direction: FaceDirection,
         chunk: &Chunk,
-        adjacent_chunks: &Vec<Option<&Chunk>>,
+        adjacent_chunks: &[Option<&Chunk>],
     ) -> bool {
         let (x, y, z) = position;
 
@@ -147,7 +145,7 @@ impl MeshBuilder {
             match adjacent_chunks
                 .iter()
                 .find(|chunk| matches!(chunk, Some(chunk) if chunk.position == this_chunk))
-                .map(|chunk| *chunk)
+                .cloned()
                 .flatten()
             {
                 Some(chunk) => chunk,
@@ -167,13 +165,13 @@ impl MeshBuilder {
             None => 0,
         };
 
-        self.mesh.indices.push(index_offset + 0);
+        self.mesh.indices.push(index_offset);
         self.mesh.indices.push(index_offset + 1);
         self.mesh.indices.push(index_offset + 2);
 
         self.mesh.indices.push(index_offset + 2);
         self.mesh.indices.push(index_offset + 3);
-        self.mesh.indices.push(index_offset + 0);
+        self.mesh.indices.push(index_offset);
 
         // Add the vertices
         Self::get_face_verticies(position, direction)

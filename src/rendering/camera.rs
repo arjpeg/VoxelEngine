@@ -10,7 +10,7 @@ pub struct Camera {
     /// The position of the camera
     pub position: glm::Vec3,
     /// The front vector of the camera
-    pub front: glm::Vec3,
+    pub front: glm::TVec3<f32>,
 
     /// The up vector of the camera
     pub up: glm::Vec3,

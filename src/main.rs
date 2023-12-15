@@ -34,7 +34,7 @@ pub static NOISE: OnceLock<noise::Perlin> = OnceLock::new();
 
 fn main() {
     // Initialize the noise seed
-    NOISE_SEED.get_or_init(|| rand::random::<u32>());
+    NOISE_SEED.get_or_init(rand::random::<u32>);
     NOISE.get_or_init(|| noise::Perlin::new(*NOISE_SEED.get().unwrap()));
 
     println!(
@@ -80,13 +80,13 @@ fn main() {
     }
 
     // Load the shaders
-    let shader_program: ShaderProgram = Default::default();
+    let shader_program = ShaderProgram::default();
 
     // Create new chunks
     let chunks = {
         let mut chunks = Vec::new();
         // let gen_strat = ChunkGenStrategy::FlatPlane(voxel::VoxelKind::Grass, 1);
-        let gen_strat = ChunkGenStrategy::Perlin3d;
+        let gen_strat = ChunkGenStrategy::Perlin2d;
 
         for x in -10..10 {
             for z in -10..10 {
@@ -176,20 +176,18 @@ fn main() {
                 WindowEvent::Key(key, _, action, _) => {
                     input.key(key, action, &mut window);
 
-                    if let Key::F = key {
-                        if let Action::Press = action {
-                            if !wire_frame {
-                                unsafe {
-                                    gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-                                }
-                            } else {
-                                unsafe {
-                                    gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-                                }
+                    if key == Key::F && action == Action::Press {
+                        if wire_frame {
+                            unsafe {
+                                gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
                             }
-
-                            wire_frame = !wire_frame;
+                        } else {
+                            unsafe {
+                                gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+                            }
                         }
+
+                        wire_frame = !wire_frame;
                     }
                 }
                 WindowEvent::CursorPos(x, y) => {

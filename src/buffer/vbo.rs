@@ -13,7 +13,7 @@ impl<T> Vbo<T> {
     /// Creates a new VBO.
     pub fn new(verticies: &[T], usage: GLenum) -> Self {
         let mut id = 0;
-        let size = std::mem::size_of_val(verticies);
+        let size = verticies.len() * std::mem::size_of::<T>();
 
         unsafe {
             // Generate the VBO
