@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub const CHUNK_WIDTH: usize = 16;
-pub const CHUNK_HEIGHT: usize = 16;
+pub const CHUNK_HEIGHT: usize = 64;
 
 /// Represents a section of the world.
 #[derive(Debug)]
@@ -69,6 +69,8 @@ pub enum ChunkGenStrategy {
     Perlin3d,
     /// Places a flat plane of some block below a certain height.
     FlatPlane(VoxelKind, u32),
+    /// A series of single voxels (used for testing)
+    SingleVoxels(Vec<(usize, usize, usize)>),
 }
 
 impl ChunkGenStrategy {
@@ -91,6 +93,11 @@ impl ChunkGenStrategy {
             ChunkGenStrategy::FlatPlane(kind, height) => {
                 self.flat_plane(chunk, *kind, *height);
             }
+            ChunkGenStrategy::SingleVoxels(voxels) => {
+                for (x, y, z) in voxels {
+                    chunk.blocks.get_mut(&(*x, *y, *z)).unwrap().kind = VoxelKind::Grass;
+                }
+            }
         }
     }
 
@@ -107,7 +114,7 @@ impl ChunkGenStrategy {
                     (z as i32 + chunk_z * CHUNK_WIDTH as i32) as f64 / 16.0,
                 ]) as f32;
 
-                let height = (noise_value * CHUNK_HEIGHT as f32).max(1.0) as usize;
+                let height = (noise_value * 0.3 * CHUNK_HEIGHT as f32).max(1.0) as usize;
 
                 for y in 0..height {
                     chunk.blocks.get_mut(&(x, y, z)).unwrap().kind = VoxelKind::Grass;

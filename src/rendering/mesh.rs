@@ -10,6 +10,8 @@ use crate::{
 pub struct Vertex {
     /// The position of the vertex.
     pub position: (f32, f32, f32),
+    /// The normal of the vertex.
+    pub normal: (f32, f32, f32),
 }
 
 /// A mesh that can be passed to the GPU.
@@ -22,7 +24,7 @@ pub struct Mesh {
 }
 
 /// The different directions that a face can be facing.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum FaceDirection {
     Up,
     Down,
@@ -43,6 +45,18 @@ impl FaceDirection {
             FaceDirection::Front,
             FaceDirection::Back,
         ]
+    }
+
+    /// Returns the face normal of the direction.
+    pub const fn normal(&self) -> (f32, f32, f32) {
+        match self {
+            FaceDirection::Up => (0.0, 1.0, 0.0),
+            FaceDirection::Down => (0.0, -1.0, 0.0),
+            FaceDirection::Left => (-1.0, 0.0, 0.0),
+            FaceDirection::Right => (1.0, 0.0, 0.0),
+            FaceDirection::Front => (0.0, 0.0, -1.0),
+            FaceDirection::Back => (0.0, 0.0, 1.0),
+        }
     }
 }
 
@@ -174,61 +188,79 @@ impl MeshBuilder {
         self.mesh.indices.push(index_offset);
 
         // Add the vertices
-        Self::get_face_verticies(position, direction)
-            .iter()
-            .for_each(|position| {
-                self.mesh.vertices.push(Vertex {
-                    position: (position.0 as f32, position.1 as f32, position.2 as f32),
-                });
+        let verticies = Self::get_face_verticies(position, direction);
+        let normal = direction.normal();
+
+        for vertex in verticies.iter() {
+            self.mesh.vertices.push(Vertex {
+                position: (vertex.0 as f32, vertex.1 as f32, vertex.2 as f32),
+                normal,
             });
+        }
+
+        // .iter()
+        // .for_each(|(x, y, z)| {
+        //     dbg!((direction, x - position.0, y - position.1, z - position.2));
+        //     std::io::stdin().read_line(&mut String::new()).unwrap();
+
+        //     // self.mesh.vertices.push(Vertex {
+        //     //     position: (position.0 as f32, position.1 as f32, position.2 as f32),
+        //     // });
+        // });
     }
 
     /// Returns the vertices of the face of a cube based on its position, size, and
-    /// direction. All of the verticies move in a counter-clockwise direction.
+    /// direction, including its normals. All of the verticies move in a counter-clockwise direction.
     #[rustfmt::skip]
-    fn get_face_verticies(
+    pub const fn get_face_verticies(
         position: (i32, i32, i32),
         direction: FaceDirection,
     ) -> [(i32, i32, i32); 4] {
         let (x, y, z) = position;
 
         match direction {
-            FaceDirection::Up => [
-                (x,     y + 1, z + 1),
-                (x,     y + 1, z),
-                (x + 1, y + 1, z),
-                (x + 1, y + 1, z + 1),
-            ],
-            FaceDirection::Down => [
-                (x,     y, z + 1),
-                (x,     y, z),
-                (x + 1, y, z),
-                (x + 1, y, z + 1),
-            ],
-            FaceDirection::Left => [
-                (x, y + 1, z + 1),
-                (x, y,     z + 1),
-                (x, y,     z),
-                (x, y + 1, z),
-            ],
-            FaceDirection::Right => [
-                (x + 1, y + 1, z + 1),
-                (x + 1, y,     z + 1),
-                (x + 1, y,     z),
-                (x + 1, y + 1, z),
-            ],
-            FaceDirection::Front => [
-                (x,   y+1, z),
-                (x,   y,   z),
-                (x+1, y,   z),
-                (x+1, y+1, z),
-            ],
-            FaceDirection::Back => [
-                (x,   y+1, z + 1),
-                (x,   y,   z + 1),
-                (x+1, y,   z + 1),
-                (x+1, y+1, z + 1),
-            ],
+            FaceDirection::Up => 
+                [
+                    (x,     y + 1, z + 1),
+                    (x,     y + 1, z),
+                    (x + 1, y + 1, z),
+                    (x + 1, y + 1, z + 1),
+                ],
+            FaceDirection::Down => 
+                [
+                    (x,     y, z + 1),
+                    (x,     y, z),
+                    (x + 1, y, z),
+                    (x + 1, y, z + 1),
+                ],
+            FaceDirection::Left => 
+                [
+                    (x, y + 1, z + 1),
+                    (x, y,     z + 1),
+                    (x, y,     z),
+                    (x, y + 1, z),
+                ],
+            FaceDirection::Right => 
+                [
+                    (x + 1, y + 1, z + 1),
+                    (x + 1, y,     z + 1),
+                    (x + 1, y,     z),
+                    (x + 1, y + 1, z),
+                ],
+            FaceDirection::Front => 
+                [
+                    (x,   y+1, z),
+                    (x,   y,   z),
+                    (x+1, y,   z),
+                    (x+1, y+1, z),
+                ],
+            FaceDirection::Back => 
+                [
+                    (x,   y+1, z + 1),
+                    (x,   y,   z + 1),
+                    (x+1, y,   z + 1),
+                    (x+1, y+1, z + 1),
+                ],
         }
     }
 }

@@ -21,7 +21,10 @@ use crate::{
     buffers::{ibo::Ibo, vao_builder::VaoBuilder},
     chunk::ChunkGenStrategy,
     input::InputManager,
-    rendering::{camera::CAMERA_SPEED, mesh::MeshBuilder},
+    rendering::{
+        camera::CAMERA_SPEED,
+        mesh::{FaceDirection, MeshBuilder},
+    },
 };
 
 const WIDTH: u32 = 1200;
@@ -33,6 +36,8 @@ pub static NOISE_SEED: OnceLock<u32> = OnceLock::new();
 pub static NOISE: OnceLock<noise::Perlin> = OnceLock::new();
 
 fn main() {
+    println!("{:?}", FaceDirection::Front.normal());
+
     // Initialize the noise seed
     NOISE_SEED.get_or_init(rand::random::<u32>);
     NOISE.get_or_init(|| noise::Perlin::new(*NOISE_SEED.get().unwrap()));
@@ -73,6 +78,7 @@ fn main() {
     let mut input = InputManager {
         last_mouse: (WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0),
         escaped: false,
+        first_frame: true,
     };
 
     unsafe {
@@ -85,11 +91,12 @@ fn main() {
     // Create new chunks
     let chunks = {
         let mut chunks = Vec::new();
-        // let gen_strat = ChunkGenStrategy::FlatPlane(voxel::VoxelKind::Grass, 1);
+        // let gen_strat = ChunkGenStrategy::FlatPlane(voxel::VoxelKind::Grass, 0);
         let gen_strat = ChunkGenStrategy::Perlin2d;
+        // let gen_strat = ChunkGenStrategy::SingleVoxels(vec![(0, 0, 0)]);
 
-        for x in -10..10 {
-            for z in -10..10 {
+        for x in -0..1 {
+            for z in -0..1 {
                 let mut chunk = Chunk::new((x, z));
                 gen_strat.apply(&mut chunk);
                 chunks.push(chunk);
@@ -115,11 +122,51 @@ fn main() {
     get_gl_error!("Mesh VBO");
 
     let mesh_ibo = Ibo::new(&mesh.indices, gl::STATIC_DRAW);
-    assert!(mesh.indices.len() % 6 == 0);
+    assert!(mesh.indices.len() % 3 == 0);
     mesh_ibo.bind();
     get_gl_error!("Mesh IBO");
 
-    let vao = VaoBuilder::new().add_layer::<(f32, f32, f32)>(3).build();
+    let vao = VaoBuilder::new()
+        .add_layer::<f32>(3)
+        .add_layer::<f32>(3)
+        .build();
+
+    // let vao = unsafe {
+    //     println!("{}", {
+    //         let mut vbo = 0;
+    //         gl::GetIntegerv(gl::ARRAY_BUFFER_BINDING, &mut vbo);
+    //         vbo
+    //     });
+
+    //     let mut vao: gl::types::GLuint = 0;
+    //     gl::GenVertexArrays(1, &mut vao);
+    //     get_gl_error!("here");
+    //     gl::BindVertexArray(vao);
+
+    //     gl::VertexAttribPointer(
+    //         0,
+    //         3i32,
+    //         gl::FLOAT,
+    //         gl::FALSE,
+    //         (6 * std::mem::size_of::<f32>()) as i32,
+    //         0 as *const gl::types::GLvoid,
+    //     );
+    //     gl::EnableVertexAttribArray(0);
+    //     get_gl_error!("first attrib pointer");
+
+    //     gl::VertexAttribPointer(
+    //         1,
+    //         3,
+    //         gl::FLOAT,
+    //         gl::FALSE,
+    //         (6 * std::mem::size_of::<f32>()) as i32,
+    //         (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
+    //     );
+    //     gl::EnableVertexAttribArray(1);
+    //     get_gl_error!("second attrib pointer");
+    //     buffers::vao::Vao { id: vao }
+    // };
+
     get_gl_error!("VAO");
 
     // Loop until the user closes the window
@@ -154,9 +201,13 @@ fn main() {
             shader_program.set_uniform("view", camera.get_view_matrix());
             shader_program.set_uniform("projection", projection_matrix);
 
+            get_gl_error!("Uniforms");
+
             // Draw the triangles
             vao.bind();
             mesh_ibo.bind();
+
+            get_gl_error!("Bind VAO and IBO");
 
             gl::DrawElements(
                 gl::TRIANGLES,
@@ -164,6 +215,8 @@ fn main() {
                 gl::UNSIGNED_INT,
                 std::ptr::null(),
             );
+
+            get_gl_error!("Draw elements");
         }
 
         // Handle input

@@ -53,19 +53,26 @@ impl VaoBuilder {
             // Bind the VAO
             gl::BindVertexArray(id);
 
-            // The offset of the current layer
-            let mut offset = 0;
-
             // The offset between each vertex
-            let stride = self.layers.iter().fold(0, |acc, layer| acc + layer.1);
+            let sizes = self
+                .layers
+                .iter()
+                .map(|layer| layer.0 * layer.1)
+                .collect::<Vec<_>>();
+
+            let stride = sizes.iter().sum::<usize>();
+
+            println!("{:?}", self.layers);
+            println!("{}", stride);
 
             // Iterate over the layers
             for (idx, layer) in self.layers.iter().enumerate() {
-                // Enable the vertex attribute array
-                gl::EnableVertexAttribArray(idx as u32);
+                // The offset of the layer
+                let offset = sizes[..idx].iter().sum::<usize>();
+
                 // Set the vertex attribute pointer
                 gl::VertexAttribPointer(
-                    0,
+                    idx as u32,
                     layer.0 as i32,
                     gl::FLOAT,
                     gl::FALSE,
@@ -73,8 +80,19 @@ impl VaoBuilder {
                     offset as *const GLvoid,
                 );
 
-                // Increment the offset
-                offset += layer.0;
+                println!(
+                    "{:?}",
+                    (
+                        idx as u32,
+                        layer.0 as i32,
+                        gl::FLOAT,
+                        gl::FALSE,
+                        stride as i32,
+                        offset as *const GLvoid,
+                    )
+                );
+                // Enable the vertex attribute array
+                gl::EnableVertexAttribArray(idx as u32);
             }
 
             // Unbind the VAO

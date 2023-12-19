@@ -6,6 +6,9 @@ pub struct InputManager {
     pub last_mouse: (f32, f32),
     /// Whether the mouse is captured.
     pub escaped: bool,
+    /// Whether it is the first frame of input
+    /// (Used to prevent the camera from jumping)
+    pub first_frame: bool,
 }
 
 impl InputManager {
@@ -13,6 +16,11 @@ impl InputManager {
     pub fn mouse_move(&mut self, x: f32, y: f32, callback: &mut dyn FnMut(f32, f32)) {
         if self.escaped {
             return;
+        }
+
+        if self.first_frame {
+            self.last_mouse = (x, y);
+            self.first_frame = false;
         }
 
         let (last_x, last_y) = self.last_mouse;
