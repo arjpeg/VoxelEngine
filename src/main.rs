@@ -24,6 +24,7 @@ use crate::{
     rendering::{
         camera::CAMERA_SPEED,
         mesh::{FaceDirection, MeshBuilder},
+        shader::shader_program::UniformValue,
     },
 };
 
@@ -95,8 +96,8 @@ fn main() {
         let gen_strat = ChunkGenStrategy::Perlin2d;
         // let gen_strat = ChunkGenStrategy::SingleVoxels(vec![(0, 0, 0)]);
 
-        for x in -0..1 {
-            for z in -0..1 {
+        for x in -5..5 {
+            for z in -5..5 {
                 let mut chunk = Chunk::new((x, z));
                 gen_strat.apply(&mut chunk);
                 chunks.push(chunk);
@@ -131,43 +132,9 @@ fn main() {
         .add_layer::<f32>(3)
         .build();
 
-    // let vao = unsafe {
-    //     println!("{}", {
-    //         let mut vbo = 0;
-    //         gl::GetIntegerv(gl::ARRAY_BUFFER_BINDING, &mut vbo);
-    //         vbo
-    //     });
-
-    //     let mut vao: gl::types::GLuint = 0;
-    //     gl::GenVertexArrays(1, &mut vao);
-    //     get_gl_error!("here");
-    //     gl::BindVertexArray(vao);
-
-    //     gl::VertexAttribPointer(
-    //         0,
-    //         3i32,
-    //         gl::FLOAT,
-    //         gl::FALSE,
-    //         (6 * std::mem::size_of::<f32>()) as i32,
-    //         0 as *const gl::types::GLvoid,
-    //     );
-    //     gl::EnableVertexAttribArray(0);
-    //     get_gl_error!("first attrib pointer");
-
-    //     gl::VertexAttribPointer(
-    //         1,
-    //         3,
-    //         gl::FLOAT,
-    //         gl::FALSE,
-    //         (6 * std::mem::size_of::<f32>()) as i32,
-    //         (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
-    //     );
-    //     gl::EnableVertexAttribArray(1);
-    //     get_gl_error!("second attrib pointer");
-    //     buffers::vao::Vao { id: vao }
-    // };
-
     get_gl_error!("VAO");
+
+    let light_pos = glm::vec3(0.0, 10.0, 0.0);
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -200,6 +167,9 @@ fn main() {
             // Bind uniforms
             shader_program.set_uniform("view", camera.get_view_matrix());
             shader_program.set_uniform("projection", projection_matrix);
+
+            shader_program.set_uniform("cameraPosition", camera.position);
+            shader_program.set_uniform("lightPosition", light_pos);
 
             get_gl_error!("Uniforms");
 

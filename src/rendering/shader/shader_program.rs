@@ -17,6 +17,7 @@ pub enum UniformValue {
     Bool(bool),
     Int(i32),
     Float(f32),
+    Vec3(f32, f32, f32),
     Vec4(f32, f32, f32, f32),
     Mat4(glm::Mat4),
 }
@@ -106,6 +107,9 @@ impl ShaderProgram {
                 UniformValue::Float(value) => {
                     gl::Uniform1f(location, value);
                 }
+                UniformValue::Vec3(x, y, z) => {
+                    gl::Uniform3f(location, x, y, z);
+                }
                 UniformValue::Vec4(x, y, z, w) => {
                     gl::Uniform4f(location, x, y, z, w);
                 }
@@ -148,6 +152,18 @@ impl From<i32> for UniformValue {
 impl From<f32> for UniformValue {
     fn from(value: f32) -> Self {
         Self::Float(value)
+    }
+}
+
+impl From<(f32, f32, f32)> for UniformValue {
+    fn from(value: (f32, f32, f32)) -> Self {
+        Self::Vec3(value.0, value.1, value.2)
+    }
+}
+
+impl From<glm::Vec3> for UniformValue {
+    fn from(value: glm::Vec3) -> Self {
+        Self::Vec3(value.x, value.y, value.z)
     }
 }
 
