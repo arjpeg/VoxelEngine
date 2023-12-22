@@ -8,7 +8,6 @@ mod voxel;
 
 use std::sync::OnceLock;
 
-use buffers::vbo::Vbo;
 use chunk::Chunk;
 
 use glfw::{Action, Context, Key, MouseButton, WindowEvent};
@@ -18,13 +17,12 @@ use owo_colors::OwoColorize;
 use rendering::{camera::Camera, shader::shader_program::ShaderProgram};
 
 use crate::{
-    buffers::{ibo::Ibo, vao_builder::VaoBuilder},
     chunk::ChunkGenStrategy,
     input::InputManager,
     rendering::{
         camera::CAMERA_SPEED,
         mesh::{FaceDirection, MeshBuilder},
-        shader::shader_program::UniformValue,
+        shapes::cube::Cube,
     },
 };
 
@@ -92,12 +90,10 @@ fn main() {
     // Create new chunks
     let chunks = {
         let mut chunks = Vec::new();
-        // let gen_strat = ChunkGenStrategy::FlatPlane(voxel::VoxelKind::Grass, 0);
-        let gen_strat = ChunkGenStrategy::Perlin2d;
-        // let gen_strat = ChunkGenStrategy::SingleVoxels(vec![(0, 0, 0)]);
+        let gen_strat = ChunkGenStrategy::FlatPlane(voxel::VoxelKind::Grass, 0);
 
-        for x in -5..5 {
-            for z in -5..5 {
+        for x in -1..1 {
+            for z in -1..1 {
                 let mut chunk = Chunk::new((x, z));
                 gen_strat.apply(&mut chunk);
                 chunks.push(chunk);
@@ -118,23 +114,10 @@ fn main() {
     let mut wire_frame = false;
 
     let mesh = MeshBuilder::new().build_mesh(&chunks);
-    let mesh_vbo = Vbo::new(&mesh.vertices, gl::STATIC_DRAW);
-    mesh_vbo.bind();
-    get_gl_error!("Mesh VBO");
-
-    let mesh_ibo = Ibo::new(&mesh.indices, gl::STATIC_DRAW);
-    assert!(mesh.indices.len() % 3 == 0);
-    mesh_ibo.bind();
-    get_gl_error!("Mesh IBO");
-
-    let vao = VaoBuilder::new()
-        .add_layer::<f32>(3)
-        .add_layer::<f32>(3)
-        .build();
-
-    get_gl_error!("VAO");
 
     let light_pos = glm::vec3(0.0, 10.0, 0.0);
+    let mut light_cube = Cube::new(light_pos);
+    light_cube.generate_mesh();
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -167,15 +150,26 @@ fn main() {
             // Bind uniforms
             shader_program.set_uniform("view", camera.get_view_matrix());
             shader_program.set_uniform("projection", projection_matrix);
+            shader_program.set_uniform("model", glm::identity());
 
             shader_program.set_uniform("cameraPosition", camera.position);
             shader_program.set_uniform("lightPosition", light_pos);
 
             get_gl_error!("Uniforms");
 
-            // Draw the triangles
-            vao.bind();
-            mesh_ibo.bind();
+            // Draw the light cube
+            light_cube.mesh.as_ref().unwrap().vao.unwrap().bind();
+            light_cube.mesh.as_ref().unwrap().ibo.unwrap().bind();
+
+            gl::DrawElements(
+                gl::TRIANGLES,
+                light_cube.mesh.as_ref().unwrap().indices.len() as i32,
+                gl::UNSIGNED_INT,
+                std::ptr::null(),
+            );
+
+            mesh.vao.unwrap().bind();
+            mesh.ibo.unwrap().bind();
 
             get_gl_error!("Bind VAO and IBO");
 

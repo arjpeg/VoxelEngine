@@ -1,7 +1,7 @@
 use crate::{
     chunk::Chunk,
     utils::{world_to_chunk_coordinate, world_to_chunk_position},
-    voxel::VoxelKind,
+    voxel::VoxelKind, buffers::{vao::Vao, vbo::Vbo, ibo::Ibo, vao_builder::VaoBuilder}, get_gl_error,
 };
 
 /// A vertex that can be passed to the GPU.
@@ -21,10 +21,16 @@ pub struct Mesh {
     pub vertices: Vec<Vertex>,
     /// The indices of the mesh.
     pub indices: Vec<u32>,
+    /// The VAO of the mesh.
+    pub vao: Option<Vao>,
+    /// The VBO of the mesh.
+    pub vbo: Option<Vbo<Vertex>>,
+    /// The IBO of the mesh.
+    pub ibo: Option<Ibo>,
 }
 
 /// The different directions that a face can be facing.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FaceDirection {
     Up,
     Down,
@@ -73,6 +79,9 @@ impl MeshBuilder {
             mesh: Mesh {
                 vertices: Vec::new(),
                 indices: Vec::new(),
+                vao: None,
+                vbo: None,
+                ibo: None,
             },
         }
     }
@@ -95,6 +104,23 @@ impl MeshBuilder {
             // Go through each block
             self.build_chunk_mesh(chunk, &adjacent_chunks);
         }
+
+        self.mesh.vbo = Some(Vbo::new(&self.mesh.vertices, gl::STATIC_DRAW));
+        self.mesh.vbo.unwrap().bind();
+
+        get_gl_error!("Mesh VBO");
+
+        self.mesh.vao = Some(VaoBuilder::new()
+        .add_layer::<f32>(3)
+        .add_layer::<f32>(3)
+        .build());
+
+        get_gl_error!("Mesh VAO");
+
+        self.mesh.ibo = Some(Ibo::new(&self.mesh.indices, gl::STATIC_DRAW));
+
+        assert!(self.mesh.indices.len() % 3 == 0);
+        get_gl_error!("Mesh IBO");
 
         self.mesh
     }
@@ -172,7 +198,7 @@ impl MeshBuilder {
     }
 
     /// Adds a quad to the mesh.
-    fn add_quad(&mut self, position: (i32, i32, i32), direction: FaceDirection) {
+    pub fn add_quad(&mut self, position: (i32, i32, i32), direction: FaceDirection) {
         // Add the indices
         let index_offset = match self.mesh.indices.last() {
             Some(last) => *last + 4,
@@ -197,16 +223,6 @@ impl MeshBuilder {
                 normal,
             });
         }
-
-        // .iter()
-        // .for_each(|(x, y, z)| {
-        //     dbg!((direction, x - position.0, y - position.1, z - position.2));
-        //     std::io::stdin().read_line(&mut String::new()).unwrap();
-
-        //     // self.mesh.vertices.push(Vertex {
-        //     //     position: (position.0 as f32, position.1 as f32, position.2 as f32),
-        //     // });
-        // });
     }
 
     /// Returns the vertices of the face of a cube based on its position, size, and

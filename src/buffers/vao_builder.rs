@@ -62,9 +62,6 @@ impl VaoBuilder {
 
             let stride = sizes.iter().sum::<usize>();
 
-            println!("{:?}", self.layers);
-            println!("{}", stride);
-
             // Iterate over the layers
             for (idx, layer) in self.layers.iter().enumerate() {
                 // The offset of the layer
@@ -80,17 +77,6 @@ impl VaoBuilder {
                     offset as *const GLvoid,
                 );
 
-                println!(
-                    "{:?}",
-                    (
-                        idx as u32,
-                        layer.0 as i32,
-                        gl::FLOAT,
-                        gl::FALSE,
-                        stride as i32,
-                        offset as *const GLvoid,
-                    )
-                );
                 // Enable the vertex attribute array
                 gl::EnableVertexAttribArray(idx as u32);
             }

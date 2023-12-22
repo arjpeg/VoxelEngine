@@ -2,6 +2,7 @@
 use gl::types::{GLenum, GLsizeiptr, GLvoid};
 
 /// An Index Buffer Object
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Ibo {
     id: u32,
 }

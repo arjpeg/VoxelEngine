@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub const CHUNK_WIDTH: usize = 16;
-pub const CHUNK_HEIGHT: usize = 64;
+pub const CHUNK_HEIGHT: usize = 128;
 
 /// Represents a section of the world.
 #[derive(Debug)]

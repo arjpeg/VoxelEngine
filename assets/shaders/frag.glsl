@@ -3,6 +3,8 @@
 uniform vec3 cameraPosition;
 uniform vec3 lightPosition;
 
+uniform float time;
+
 in vec3 normal;
 in vec3 fragPos;
 
@@ -30,7 +32,7 @@ void main() {
     vec3 specular = specularStrength * spec * lightColor;
 
     // Apply all lighting techniques
-    vec3 result = ambient + diffuse + specular;
+    vec3 result = ambient + diffuse; // + specular;
 
     fragColor = vec4(result, 1.0);
 }
