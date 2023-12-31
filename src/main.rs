@@ -26,8 +26,8 @@ use crate::{
     },
 };
 
-const WIDTH: u32 = 1200;
-const HEIGHT: u32 = 1200;
+const WIDTH: u32 = 1600;
+const HEIGHT: u32 = 1600;
 
 const ASPECT_RATIO: f32 = WIDTH as f32 / HEIGHT as f32;
 
@@ -90,10 +90,11 @@ fn main() {
     // Create new chunks
     let chunks = {
         let mut chunks = Vec::new();
-        let gen_strat = ChunkGenStrategy::FlatPlane(voxel::VoxelKind::Grass, 0);
+        // let gen_strat = ChunkGenStrategy::FlatPlane(voxel::VoxelKind::Grass, 0);
+        let gen_strat = ChunkGenStrategy::Perlin2d;
 
-        for x in -1..1 {
-            for z in -1..1 {
+        for x in -5..5 {
+            for z in -5..5 {
                 let mut chunk = Chunk::new((x, z));
                 gen_strat.apply(&mut chunk);
                 chunks.push(chunk);
@@ -115,8 +116,9 @@ fn main() {
 
     let mesh = MeshBuilder::new().build_mesh(&chunks);
 
-    let light_pos = glm::vec3(0.0, 10.0, 0.0);
+    let mut light_pos = glm::vec3(0.0, 10.0, 0.0);
     let mut light_cube = Cube::new(light_pos);
+
     light_cube.generate_mesh();
 
     // Loop until the user closes the window
@@ -141,6 +143,8 @@ fn main() {
             );
         }
 
+        // light_pos.y = (time * 2.0).sin() * 5.0 + 10.0;
+
         unsafe {
             shader_program.use_program();
 
@@ -158,15 +162,21 @@ fn main() {
             get_gl_error!("Uniforms");
 
             // Draw the light cube
-            light_cube.mesh.as_ref().unwrap().vao.unwrap().bind();
-            light_cube.mesh.as_ref().unwrap().ibo.unwrap().bind();
+            light_cube.position = light_pos;
+            light_cube.update_vbo();
 
-            gl::DrawElements(
-                gl::TRIANGLES,
-                light_cube.mesh.as_ref().unwrap().indices.len() as i32,
-                gl::UNSIGNED_INT,
-                std::ptr::null(),
-            );
+            // let light_mesh = light_cube.mesh.as_ref().unwrap();
+
+            // light_mesh.vbo.unwrap().bind();
+            // light_mesh.vao.unwrap().bind();
+            // light_mesh.ibo.unwrap().bind();
+
+            // gl::DrawElements(
+            //     gl::TRIANGLES,
+            //     light_mesh.indices.len() as i32,
+            //     gl::UNSIGNED_INT,
+            //     std::ptr::null(),
+            // );
 
             mesh.vao.unwrap().bind();
             mesh.ibo.unwrap().bind();

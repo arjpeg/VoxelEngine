@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 use nalgebra_glm as glm;
 
 use crate::{
@@ -6,45 +7,6 @@ use crate::{
     rendering::mesh::{FaceDirection, Mesh, Vertex},
 };
 
-#[allow(dead_code)]
-// pub const CUBE_POSITIONS: [(f32, f32, f32); 36] = [
-//     (-0.5, -0.5, -0.5),
-//     (0.5, -0.5, -0.5),
-//     (0.5, 0.5, -0.5),
-//     (0.5, 0.5, -0.5),
-//     (-0.5, 0.5, -0.5),
-//     (-0.5, -0.5, -0.5),
-//     (-0.5, -0.5, 0.5),
-//     (0.5, -0.5, 0.5),
-//     (0.5, 0.5, 0.5),
-//     (0.5, 0.5, 0.5),
-//     (-0.5, 0.5, 0.5),
-//     (-0.5, -0.5, 0.5),
-//     (-0.5, 0.5, 0.5),
-//     (-0.5, 0.5, -0.5),
-//     (-0.5, -0.5, -0.5),
-//     (-0.5, -0.5, -0.5),
-//     (-0.5, -0.5, 0.5),
-//     (-0.5, 0.5, 0.5),
-//     (0.5, 0.5, 0.5),
-//     (0.5, 0.5, -0.5),
-//     (0.5, -0.5, -0.5),
-//     (0.5, -0.5, -0.5),
-//     (0.5, -0.5, 0.5),
-//     (0.5, 0.5, 0.5),
-//     (-0.5, -0.5, -0.5),
-//     (0.5, -0.5, -0.5),
-//     (0.5, -0.5, 0.5),
-//     (0.5, -0.5, 0.5),
-//     (-0.5, -0.5, 0.5),
-//     (-0.5, -0.5, -0.5),
-//     (-0.5, 0.5, -0.5),
-//     (0.5, 0.5, -0.5),
-//     (0.5, 0.5, 0.5),
-//     (0.5, 0.5, 0.5),
-//     (-0.5, 0.5, 0.5),
-//     (-0.5, 0.5, -0.5),
-// ];
 pub const CUBE_FACES: [(FaceDirection, [(i32, i32, i32); 4]); 6] = {
     [
         (
@@ -148,5 +110,31 @@ impl Cube {
         };
 
         self.mesh = Some(mesh);
+    }
+
+    pub fn update_vbo(&mut self) {
+        let mut verticies = Vec::new();
+
+        for (face, positions) in CUBE_FACES {
+            let normal = face.normal();
+
+            for position in positions {
+                let position = glm::vec3(position.0 as f32, position.1 as f32, position.2 as f32)
+                    + self.position;
+
+                verticies.push(Vertex {
+                    position: (position.x, position.y, position.z),
+                    normal,
+                });
+            }
+        }
+
+        if let Some(mesh) = self.mesh.as_mut() {
+            // Update the VBO
+            mesh.vbo.unwrap().bind();
+            mesh.vbo.unwrap().update(&verticies);
+
+            mesh.vertices = verticies;
+        }
     }
 }

@@ -72,7 +72,7 @@ impl Camera {
 
     /// Gets the projection matrix of the camera
     pub fn get_projection_matrix(&self, aspect_ratio: f32) -> glm::Mat4 {
-        glm::perspective(aspect_ratio, self.fov.to_radians(), 0.1, 100.0)
+        glm::perspective(aspect_ratio, self.fov.to_radians(), 0.1, 1000.0)
     }
 
     /// Handles keyboard events

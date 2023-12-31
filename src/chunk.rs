@@ -11,6 +11,8 @@ use crate::{
 pub const CHUNK_WIDTH: usize = 16;
 pub const CHUNK_HEIGHT: usize = 128;
 
+pub const NOISE_SCALE: f64 = 0.01;
+
 /// Represents a section of the world.
 #[derive(Debug)]
 pub struct Chunk {
@@ -109,14 +111,18 @@ impl ChunkGenStrategy {
 
         for x in 0..CHUNK_WIDTH {
             for z in 0..CHUNK_WIDTH {
-                let noise_value = noise.get([
-                    (x as i32 + chunk_x * CHUNK_WIDTH as i32) as f64 / 16.0,
-                    (z as i32 + chunk_z * CHUNK_WIDTH as i32) as f64 / 16.0,
-                ]) as f32;
+                let pos = (
+                    (x as i32 + chunk_x * CHUNK_WIDTH as i32) as f64 * NOISE_SCALE,
+                    (z as i32 + chunk_z * CHUNK_WIDTH as i32) as f64 * NOISE_SCALE,
+                );
 
-                let height = (noise_value * 0.3 * CHUNK_HEIGHT as f32).max(1.0) as usize;
+                let noise_value = noise.get([pos.0, pos.1]) as f32;
+                let noise_value = (noise_value + 1.0) / 2.0;
+                let noise_value = noise_value.clamp(0.0, 1.0);
 
-                for y in 0..height {
+                let height = (noise_value * CHUNK_HEIGHT as f32) as usize;
+
+                for y in 1..height {
                     chunk.blocks.get_mut(&(x, y, z)).unwrap().kind = VoxelKind::Grass;
                 }
             }
@@ -129,9 +135,9 @@ impl ChunkGenStrategy {
 
         for (_, voxel) in chunk.blocks.iter_mut() {
             let noise_value = noise.get([
-                voxel.position.0 as f64 / 16.0,
-                voxel.position.1 as f64 / 16.0,
-                voxel.position.2 as f64 / 16.0,
+                voxel.position.0 as f64 * NOISE_SCALE,
+                voxel.position.1 as f64 * NOISE_SCALE,
+                voxel.position.2 as f64 * NOISE_SCALE,
             ]) as f32;
 
             if noise_value > 0.0 {
