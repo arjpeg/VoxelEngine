@@ -22,7 +22,6 @@ use crate::{
     rendering::{
         camera::CAMERA_SPEED,
         mesh::{FaceDirection, MeshBuilder},
-        shapes::cube::Cube,
     },
 };
 
@@ -115,11 +114,7 @@ fn main() {
     let mut wire_frame = false;
 
     let mesh = MeshBuilder::new().build_mesh(&chunks);
-
-    let mut light_pos = glm::vec3(0.0, 10.0, 0.0);
-    let mut light_cube = Cube::new(light_pos);
-
-    light_cube.generate_mesh();
+    let light_pos = glm::vec3(0.0, 30.0, 0.0);
 
     // Loop until the user closes the window
     while !window.should_close() {
@@ -143,8 +138,6 @@ fn main() {
             );
         }
 
-        // light_pos.y = (time * 2.0).sin() * 5.0 + 10.0;
-
         unsafe {
             shader_program.use_program();
 
@@ -160,23 +153,6 @@ fn main() {
             shader_program.set_uniform("lightPosition", light_pos);
 
             get_gl_error!("Uniforms");
-
-            // Draw the light cube
-            light_cube.position = light_pos;
-            light_cube.update_vbo();
-
-            // let light_mesh = light_cube.mesh.as_ref().unwrap();
-
-            // light_mesh.vbo.unwrap().bind();
-            // light_mesh.vao.unwrap().bind();
-            // light_mesh.ibo.unwrap().bind();
-
-            // gl::DrawElements(
-            //     gl::TRIANGLES,
-            //     light_mesh.indices.len() as i32,
-            //     gl::UNSIGNED_INT,
-            //     std::ptr::null(),
-            // );
 
             mesh.vao.unwrap().bind();
             mesh.ibo.unwrap().bind();

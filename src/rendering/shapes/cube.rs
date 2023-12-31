@@ -1,4 +1,3 @@
-#[allow(dead_code)]
 use nalgebra_glm as glm;
 
 use crate::{
@@ -7,6 +6,7 @@ use crate::{
     rendering::mesh::{FaceDirection, Mesh, Vertex},
 };
 
+#[allow(dead_code)]
 pub const CUBE_FACES: [(FaceDirection, [(i32, i32, i32); 4]); 6] = {
     [
         (
@@ -36,6 +36,7 @@ pub const CUBE_FACES: [(FaceDirection, [(i32, i32, i32); 4]); 6] = {
     ]
 };
 
+#[allow(dead_code)]
 pub const CUBE_INDICIES: [[u32; 3]; 12] = [
     [0, 1, 2],
     [2, 3, 0],
@@ -57,6 +58,7 @@ pub struct Cube {
     pub mesh: Option<Mesh>,
 }
 
+#[allow(dead_code)]
 impl Cube {
     pub fn new(position: glm::Vec3) -> Self {
         Self {

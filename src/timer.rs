@@ -32,4 +32,12 @@ impl Timer {
     pub fn tick(&mut self, delta_time: f32) {
         self.current_time += delta_time;
     }
+
+    /// Returns the amount of time (in millis) elapsed since the last tick.
+    pub fn elapsed(&mut self) -> f32 {
+        let elapsed = self.current_time;
+        self.current_time = 0.0;
+
+        elapsed
+    }
 }
