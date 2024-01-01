@@ -92,8 +92,8 @@ fn main() {
         // let gen_strat = ChunkGenStrategy::FlatPlane(voxel::VoxelKind::Grass, 0);
         let gen_strat = ChunkGenStrategy::Perlin2d;
 
-        for x in -5..5 {
-            for z in -5..5 {
+        for x in -0..5 {
+            for z in -0..5 {
                 let mut chunk = Chunk::new((x, z));
                 gen_strat.apply(&mut chunk);
                 chunks.push(chunk);
