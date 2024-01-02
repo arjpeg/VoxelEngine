@@ -61,7 +61,6 @@ impl Shader {
     }
 
     pub fn attach(&self, program: u32) {
-        println!("Attaching shader '{}'", self.path.bold());
         unsafe {
             gl::AttachShader(program, self.id);
         }

@@ -1,6 +1,7 @@
 use std::{ffi::CString, process::exit};
 
 use gl::types::GLchar;
+use log::info;
 use owo_colors::OwoColorize;
 
 use nalgebra_glm as glm;
@@ -81,7 +82,7 @@ impl ShaderProgram {
             exit(1);
         }
 
-        println!("{}", "Shader program linked successfully!".green().bold(),);
+        info!("Shader program linked successfully!");
 
         self.id = shader_program;
     }

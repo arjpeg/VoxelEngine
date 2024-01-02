@@ -2,6 +2,7 @@ mod buffers;
 mod chunk;
 mod input;
 mod rendering;
+mod systems;
 mod timer;
 mod utils;
 mod voxel;
@@ -11,22 +12,20 @@ use std::sync::OnceLock;
 use chunk::Chunk;
 
 use glfw::{Action, Context, Key, MouseButton, WindowEvent};
+use log::info;
 use nalgebra_glm as glm;
 
 use owo_colors::OwoColorize;
 use rendering::{camera::Camera, shader::shader_program::ShaderProgram};
 
 use crate::{
-    chunk::ChunkGenStrategy,
     input::InputManager,
-    rendering::{
-        camera::CAMERA_SPEED,
-        mesh::{FaceDirection, MeshBuilder},
-    },
+    rendering::{camera::CAMERA_SPEED, mesh::MeshBuilder},
+    systems::{chunk_builder::ChunkGenStrategy, chunk_manager::ChunkManager},
 };
 
-const WIDTH: u32 = 1600;
-const HEIGHT: u32 = 1600;
+const WIDTH: u32 = 1200;
+const HEIGHT: u32 = 1200;
 
 const ASPECT_RATIO: f32 = WIDTH as f32 / HEIGHT as f32;
 
@@ -34,13 +33,18 @@ pub static NOISE_SEED: OnceLock<u32> = OnceLock::new();
 pub static NOISE: OnceLock<noise::Perlin> = OnceLock::new();
 
 fn main() {
-    println!("{:?}", FaceDirection::Front.normal());
+    // Initialize the logger
+    std::env::set_var("RUST_LOG", "debug");
+    env_logger::builder()
+        .format_timestamp(None)
+        .format_module_path(false)
+        .init();
 
     // Initialize the noise seed
     NOISE_SEED.get_or_init(rand::random::<u32>);
     NOISE.get_or_init(|| noise::Perlin::new(*NOISE_SEED.get().unwrap()));
 
-    println!(
+    log::info!(
         "Using noise speed: {}",
         NOISE_SEED.get().unwrap().cyan().bold()
     );
@@ -92,8 +96,8 @@ fn main() {
         // let gen_strat = ChunkGenStrategy::FlatPlane(voxel::VoxelKind::Grass, 0);
         let gen_strat = ChunkGenStrategy::Perlin2d;
 
-        for x in -0..5 {
-            for z in -0..5 {
+        for x in -3..4 {
+            for z in -3..4 {
                 let mut chunk = Chunk::new((x, z));
                 gen_strat.apply(&mut chunk);
                 chunks.push(chunk);
@@ -102,6 +106,12 @@ fn main() {
 
         chunks
     };
+
+    info!("Created {} chunks", chunks.len());
+
+    let gen_strat = ChunkGenStrategy::Perlin2d;
+
+    let mut chunk_manager = ChunkManager::new(gen_strat, glm::vec3(0.0, 0.0, 0.0));
 
     // Create transformations
     let mut camera = Camera::new(glm::vec3(0.0, 0.0, 20.0), 45.0);
@@ -118,6 +128,8 @@ fn main() {
 
     // Loop until the user closes the window
     while !window.should_close() {
+        chunk_manager.update(camera.position);
+
         // Swap front and back buffers
         window.swap_buffers();
 
